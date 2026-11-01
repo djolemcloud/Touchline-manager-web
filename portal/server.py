@@ -142,6 +142,11 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception: ref='/'
                 return self.redirect(ref,{'Set-Cookie':f'tl_lang={lang}; Path=/; SameSite=Lax; Max-Age=31536000'})
             if path=='/': return self.send_html(views.home(msg))
+            if path=='/search': return self.send_html(views.search(q1(q,'q',''),msg))
+            if path=='/api/search':
+                import json as _json
+                data=_json.dumps(views.search_data(q1(q,'q',''),limit=6),ensure_ascii=False).encode('utf-8')
+                self.send_response(200); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store'); self.end_headers(); self.wfile.write(data); return
             if path=='/country': return self.redirect('/'+(('?msg='+quote(msg)) if msg else ''))
             if path=='/fss': return self.send_html(views.fss_hub(int(q1(q,'country_id','1')),msg))
             if path in ('/fss/national','/national'): return self.send_html(views.national_hub(int(q1(q,'country_id','1')),msg))

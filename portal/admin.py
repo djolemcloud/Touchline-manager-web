@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 from urllib.parse import quote
 from .data import connect
 from .ui import layout, notice, crumb, esc
@@ -7,6 +8,9 @@ from . import history_sync
 from . import history_l12
 from . import history_excel
 from .config import VERSION, DB_PATH, PORT
+
+
+ADMIN_NAV_JS = r"""<script>(function(){var links=[].slice.call(document.querySelectorAll('.adminnav a'));if(!('IntersectionObserver' in window)||!links.length)return;var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.remove('active');});var a=map[e.target.id];if(a){a.classList.add('active');if(a.scrollIntoView&&window.innerWidth<1100)a.parentNode.scrollLeft=a.offsetLeft-20;}}});},{rootMargin:'-30% 0px -60% 0px'});Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});})();</script>"""
 
 
 def page(cid=1,msg='',details=False):
@@ -76,23 +80,34 @@ def page(cid=1,msg='',details=False):
         return 'Tabela nije konfigurisana'
     nt_all=''.join(f'<div class="admin-team-row"><b>{esc(t["name"])}</b><span>{t["players"]} igrača · {t["staff"]} staff · {_team_status(t)}</span></div>' for t in teams)
     team_opts=''.join(f'<option value="{t["id"]}">{esc(t["name"])}</option>' for t in teams)
-    def form(action,label,extra=''):
-        return f'<form data-busy="1" method="post" action="{action}"><input type="hidden" name="country_id" value="{cid}">{extra}<button>{esc(label)}</button></form>'
+    def form(action,label,extra='',primary=False):
+        # "01 · SASTAVI LIGA" -> numbered step button; the visible text stays identical
+        m=re.match(r'^(\d{2}|POSEBNO)\s*·\s*(.+)$',label)
+        if m:
+            inner=f'<b class="stepno">{esc(m.group(1) if m.group(1)!="POSEBNO" else "★")}</b> <span>{esc(m.group(2))}</span>'
+        else:
+            inner=f'<span>{esc(label)}</span>'
+        cls='bigaction' if primary else 'step'
+        return f'<form data-busy="1" method="post" action="{action}"><input type="hidden" name="country_id" value="{cid}">{extra}<button class="{cls}" title="{esc(label)}">{inner}</button></form>'
 
     if details:
-        status_table=f'''<section class="adminpanel"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljna tabela je učitana na zahtev.</p><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Nivo</th><th>Liga</th><th>Klubovi</th><th>TM</th><th>Review</th><th>NO TM</th><th>Igrači</th><th>Staff</th></tr></thead><tbody>{rows}</tbody></table></div><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}">Sakrij detaljni status</a></div></section>'''
+        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljna tabela je učitana na zahtev.</p><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Nivo</th><th>Liga</th><th>Klubovi</th><th>TM</th><th>Review</th><th>NO TM</th><th>Igrači</th><th>Staff</th></tr></thead><tbody>{rows}</tbody></table></div><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}">Sakrij detaljni status</a></div></section>'''
     else:
-        status_table=f'''<section class="adminpanel"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljni brojači po svih {len(leagues)} liga više se ne računaju pri svakom ulasku u Superadmin. Učitaj ih samo kada su potrebni.</p><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}&details=1">Učitaj detaljni status liga</a></div></section>'''
+        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljni brojači po svih {len(leagues)} liga više se ne računaju pri svakom ulasku u Superadmin. Učitaj ih samo kada su potrebni.</p><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}&details=1">Učitaj detaljni status liga</a></div></section>'''
 
+    nav_items=[('a-night','Noćna sinhronizacija'),('a-global','Sve lige'),('a-national','Reprezentacije'),('a-top','SuperLiga + Prva liga'),('a-history','Istorija'),('a-lower','Nivo 3–6'),('a-youth','Omladinska'),('a-women','Ženski fudbal'),('a-advanced','Napredno'),('a-status','Dijagnostika')]
+    adminnav='<nav class="adminnav" aria-label="SUPERADMIN">'+''.join(f'<a href="#{k}">{esc(v)}</a>' for k,v in nav_items)+'</nav>'
+    mapped_pct=int(round(100*total('mapped')/total('clubs'))) if total('clubs') else 0
     body=notice(msg)+crumb([('Početna','/'),('SUPERADMIN',None)])+f'''
-<section class="adminhero"><small>SUPERADMIN · DATA OPERATIONS</small><h1>Touchline Centar sinhronizacije</h1><p>GLOBAL obuhvata sve lige. Svi ligaški blokovi koriste isti prioritet i isti numerisani redosled 01–07. Generalna noćna sinhronizacija pokreće kompletan ciklus jednim klikom.<br><span class="muted">Runtime: build {VERSION} · port {PORT} · DB {esc(str(DB_PATH))}</span></p></section>
-<div class="adminstats"><div><span>LIGE</span><strong>{len(leagues)}</strong></div><div><span>KLUBOVI</span><strong>{total('clubs')}</strong></div><div><span>TM MAPPED</span><strong>{total('mapped')}/{total('clubs')}</strong></div><div><span>IGRAČI</span><strong>{total('players')}</strong></div><div><span>STAFF</span><strong>{total('staff')}</strong></div></div>
+<section class="adminhero"><div class="adminhero-copy"><small>SUPERADMIN · DATA OPERATIONS</small><h1>Centar sinhronizacije</h1><p>GLOBAL obuhvata sve lige. Svi ligaški blokovi koriste isti prioritet i isti numerisani redosled 01–07. Generalna noćna sinhronizacija pokreće kompletan ciklus jednim klikom.</p><p class="adminruntime">build {VERSION} · port {PORT} · {esc(str(DB_PATH))}</p></div>
+<div class="adminstats"><div><span>LIGE</span><strong>{len(leagues)}</strong></div><div><span>KLUBOVI</span><strong>{total('clubs')}</strong></div><div><span>TM MAPPED</span><strong>{total('mapped')}/{total('clubs')}</strong><i class="meter"><i style="width:{mapped_pct}%"></i></i></div><div><span>IGRAČI</span><strong>{total('players')}</strong></div><div><span>STAFF</span><strong>{total('staff')}</strong></div></div></section>
+<div class="adminlayout">{adminnav}<div class="admincontent">
 
-<section class="adminpanel dangerpanel"><small>GENERALNA SINHRONIZACIJA</small><h2>Generalno čišćenje i update</h2><p>Jedno dugme za kompletno noćno osvežavanje. Redosled: 01 sastavi → 02 TM mapping → 03 igrači/staff → 04 transferi → 05 grbovi → 06 informacije o klubovima → 07 tabele → reprezentacije.</p><div class="adminactions singleaction">
-{form('/admin/action/night_sync','GENERALNO ČIŠĆENJE I UPDATE · NOĆNA SINHRONIZACIJA · 01→07')}
+<section class="adminpanel dangerpanel" id="a-night"><small>GENERALNA SINHRONIZACIJA</small><h2>Generalno čišćenje i update</h2><p>Jedno dugme za kompletno noćno osvežavanje. Redosled: 01 sastavi → 02 TM mapping → 03 igrači/staff → 04 transferi → 05 grbovi → 06 informacije o klubovima → 07 tabele → reprezentacije.</p><div class="adminactions singleaction">
+{form('/admin/action/night_sync','GENERALNO ČIŠĆENJE I UPDATE · NOĆNA SINHRONIZACIJA · 01→07',primary=True)}
 </div></section>
 
-<section class="adminpanel"><small>GLOBAL · SVE LIGE</small><h2>Centralne akcije · isti redosled 01–07</h2><div class="adminactions">
+<section class="adminpanel" id="a-global"><small>GLOBAL · SVE LIGE</small><h2>Centralne akcije · isti redosled 01–07</h2><div class="adminactions">
 {form('/admin/action/all_memberships','01 · SASTAVI SVIH LIGA')}
 {form('/admin/action/all_tm','02 · TM MAPPING SVIH LIGA')}
 {form('/admin/action/all_data','03 · IGRAČI + STAFF','<label class="check"><input type="checkbox" name="fetch_dob" value="1"> DOB stručnog štaba</label>')}
@@ -102,12 +117,12 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/standings_all','07 · TABELE')}
 </div></section>
 
-<section class="adminpanel nationaladmin"><small>NACIONALNE SELEKCIJE</small><h2>Reprezentacije · rosteri, staff i tabele</h2><p>Sve operacije reprezentacija su na jednom mestu. Za reprezentacije su primenljive 01 (roster/staff) i 07 (tabela); klupske operacije 02–06 se ne primenjuju. Srbija A je automatski vezana za UEFA Nations League A · Grupa A2; U21 trenutno nema ligašku tabelu.</p><div class="adminactions">
+<section class="adminpanel nationaladmin" id="a-national"><small>NACIONALNE SELEKCIJE</small><h2>Reprezentacije · rosteri, staff i tabele</h2><p>Sve operacije reprezentacija su na jednom mestu. Za reprezentacije su primenljive 01 (roster/staff) i 07 (tabela); klupske operacije 02–06 se ne primenjuju. Srbija A je automatski vezana za UEFA Nations League A · Grupa A2; U21 trenutno nema ligašku tabelu.</p><div class="adminactions">
 {form('/admin/action/national','01 · REPREZENTACIJE · ROSTERI + STAFF','<label class="check"><input type="checkbox" name="fetch_dob" value="1"> DOB stručnog štaba</label>')}
 {form('/admin/action/national_standings','07 · REPREZENTACIJE · TABELE')}
-</div>{nt_all}<details style="margin-top:14px"><summary>Napredni override izvora tabele</summary><form method="post" action="/admin/action/national_standings_source"><input type="hidden" name="country_id" value="{cid}"><select name="team_id">{team_opts}</select><input name="standings_url" placeholder="FSS / UEFA / Transfermarkt URL za override" style="min-width:420px"><button>Sačuvaj / promeni izvor</button></form></details></section>
+</div>{nt_all}<details class="admindetails"><summary>Napredni override izvora tabele</summary><form method="post" action="/admin/action/national_standings_source"><input type="hidden" name="country_id" value="{cid}"><select name="team_id">{team_opts}</select><input name="standings_url" placeholder="FSS / UEFA / Transfermarkt URL za override" class="wideinput"><button>Sačuvaj / promeni izvor</button></form></details></section>
 
-<section class="adminpanel"><small>TOP TIER · NIVO 1–2</small><h2>SuperLiga + Prva liga Srbije</h2><p>{section_summary(top)}</p><div class="adminactions">
+<section class="adminpanel" id="a-top"><small>TOP TIER · NIVO 1–2</small><h2>SuperLiga + Prva liga Srbije</h2><p>{section_summary(top)}</p><div class="adminactions">
 {form('/admin/action/top_memberships','01 · SASTAVI LIGA')}
 {form('/admin/action/top_tm','02 · TM MAPPING')}
 {form('/admin/action/top_data','03 · IGRAČI + STAFF')}
@@ -117,12 +132,14 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/top_standings','07 · TABELE')}
 </div></section>
 
-<section class="adminpanel historyadmin"><small>ISTORIJSKA BAZA · EXCEL MASTER</small><h2>Prvenstvo · Kup · Drugi rang · Srpske lige</h2><p>Od verzije 1.6.4 kompletna DOMAĆA LIGAŠKA istorija u History sloju ima samo jedan dozvoljeni izvor: zajednički Excel <b>HISTORY/TOUCHLINE_HISTORY_MASTER.xlsx</b>, isti format koji će koristiti i Touchline Manager.</p>
+<section class="adminpanel historyadmin" id="a-history"><small>ISTORIJSKA BAZA · EXCEL MASTER</small><h2>Prvenstvo · Kup · Drugi rang · Srpske lige</h2><p>Od verzije 1.6.4 kompletna DOMAĆA LIGAŠKA istorija u History sloju ima samo jedan dozvoljeni izvor: zajednički Excel <b>HISTORY/TOUCHLINE_HISTORY_MASTER.xlsx</b>, isti format koji će koristiti i Touchline Manager.</p>
+<div class="adminactions">
 {form('/admin/action/history_excel_import','ISTORIJA · UVEZI / OSVEŽI MASTER EXCEL')}
 {form('/admin/action/history_excel_validate','ISTORIJA · PROVERI MASTER EXCEL')}
+</div>
 <p class="muted">LIGA = isključivo Excel. RSSSF/Wikipedia/COMET ne mogu više da upisuju ligaške redove u klupsku istoriju. Aktuelne tabele, sastavi, transferi i evropski uspesi ostaju odvojeni i ne diraju se.</p></section>
 
-<section class="adminpanel"><small>NIŽE SENIORSKE · NIVO 3–6</small><h2>Srpske · Zonske · Okružne · Opštinske</h2><p>{section_summary(lower)}</p><div class="adminactions">
+<section class="adminpanel" id="a-lower"><small>NIŽE SENIORSKE · NIVO 3–6</small><h2>Srpske · Zonske · Okružne · Opštinske</h2><p>{section_summary(lower)}</p><div class="adminactions">
 {form('/admin/action/lower_memberships','01 · SASTAVI LIGA')}
 {form('/admin/action/lower_tm','02 · TM MAPPING')}
 {form('/admin/action/lower_data','03 · IGRAČI + STAFF')}
@@ -133,7 +150,7 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/lower_discover','POSEBNO · OTKRIJ / USKLADI SVE LIGE NIVO 3–6')}
 </div></section>
 
-<section class="adminpanel"><small>OMLADINSKA TAKMIČENJA</small><h2>Omladinska liga Srbije + Kadetska liga Srbije</h2><p>{section_summary(youth)}</p><div class="adminactions">
+<section class="adminpanel" id="a-youth"><small>OMLADINSKA TAKMIČENJA</small><h2>Omladinska liga Srbije + Kadetska liga Srbije</h2><p>{section_summary(youth)}</p><div class="adminactions">
 {form('/admin/action/youth_memberships','01 · SASTAVI LIGA')}
 {form('/admin/action/youth_tm','02 · TM MAPPING')}
 {form('/admin/action/youth_data','03 · IGRAČI + STAFF')}
@@ -143,7 +160,7 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/youth_standings','07 · TABELE')}
 </div></section>
 
-<section class="adminpanel womenadmin"><small>ŽENSKI FUDBAL</small><h2>Ženske lige i selekcije</h2><p>{section_summary(women)}</p><div class="adminactions">
+<section class="adminpanel womenadmin" id="a-women"><small>ŽENSKI FUDBAL</small><h2>Ženske lige i selekcije</h2><p>{section_summary(women)}</p><div class="adminactions">
 {form('/admin/action/women_memberships','01 · SASTAVI LIGA')}
 {form('/admin/action/women_tm','02 · TM MAPPING')}
 {form('/admin/action/women_data','03 · IGRAČICE + STAFF')}
@@ -154,12 +171,12 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/women_fss','POSEBNO · FSS ROSTERI SUPER + PRVA')}
 </div></section>
 
-<section class="adminpanel"><small>NAPREDNE KONTROLE</small><h2>Po nivou / po ligi / mapping</h2>
-<form data-busy="1" method="post" action="/admin/action/level"><input type="hidden" name="country_id" value="{cid}"><select name="level">{level_opts}</select><select name="operation"><option value="membership">Sastavi liga</option><option value="tm">TM mapping</option><option value="data">Igrači + staff</option><option value="transfers">Transferi</option><option value="standings">Tabela</option></select><button>Pokreni nivo</button></form>
-<form data-busy="1" method="post" action="/admin/action/league"><input type="hidden" name="country_id" value="{cid}"><select name="league_id">{league_opts}</select><select name="operation"><option value="membership">Sastav lige</option><option value="tm">TM mapping</option><option value="data">Igrači + staff</option><option value="transfers">Transferi</option><option value="standings">Tabela</option></select><button>Pokreni ligu</button></form>
+<section class="adminpanel" id="a-advanced"><small>NAPREDNE KONTROLE</small><h2>Po nivou / po ligi / mapping</h2>
+<form class="adminrowform" data-busy="1" method="post" action="/admin/action/level"><input type="hidden" name="country_id" value="{cid}"><select name="level">{level_opts}</select><select name="operation"><option value="membership">Sastavi liga</option><option value="tm">TM mapping</option><option value="data">Igrači + staff</option><option value="transfers">Transferi</option><option value="standings">Tabela</option></select><button>Pokreni nivo</button></form>
+<form class="adminrowform" data-busy="1" method="post" action="/admin/action/league"><input type="hidden" name="country_id" value="{cid}"><select name="league_id">{league_opts}</select><select name="operation"><option value="membership">Sastav lige</option><option value="tm">TM mapping</option><option value="data">Igrači + staff</option><option value="transfers">Transferi</option><option value="standings">Tabela</option></select><button>Pokreni ligu</button></form>
 <div class="pageactions"><a class="button secondary" href="/mapping_workbench?country_id={cid}&level=3">Mapping Nivo 3</a><a class="button secondary" href="/mapping_workbench?country_id={cid}&level=4">Mapping Nivo 4</a><a class="button secondary" href="/mapping_workbench?country_id={cid}&level=5">Mapping Nivo 5</a><a class="button secondary" href="/mapping_workbench?country_id={cid}&level=6">Mapping Nivo 6</a></div></section>
 
-{status_table}'''
+{status_table}</div></div>{ADMIN_NAV_JS}'''
     return layout('SUPERADMIN · Sync Center',body,admin=True)
 
 def _select_leagues(cid, levels=None, section=None):

@@ -153,3 +153,16 @@ REGION_LEAGUES = {
 }
 
 LEVEL6_REGION_ORDER = ('FSB','FSV','WEST','EAST','KIM')
+
+
+# ---------------------------------------------------------------------------
+# Standings zones (coloured stripe + legend under a league table).
+# Key = league id from the database (1 = SuperLiga Srbije, 2 = Prva liga Srbije).
+# Each zone: (from_position, to_position, kind, label shown in the legend).
+# kind is one of: champion, ucl, uel, uecl, promotion, playoff, barrage, playout, relegation
+# Leagues not listed here fall back to the zone notes that come with the
+# source table (e.g. SrbijaSport "Play Off", "Baraž", ▲ / ▼).
+# ---------------------------------------------------------------------------
+STANDINGS_ZONES = {
+    # 1: [(1, 1, 'ucl', 'Liga šampiona – kvalifikacije'), (13, 14, 'relegation', 'Ispadanje')],
+}

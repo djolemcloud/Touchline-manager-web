@@ -5,7 +5,7 @@ from .ui import layout, notice, crumb, visual_card, rich_card, group_card, metri
 from . import sync_engine as engine
 from . import history as history_data
 from . import trophies as trophy_data
-from .catalog import HOME_LEVELS, FSS_HUB, DEVELOPMENT_HUB, REGIONS, YOUTH_IMAGES, WOMEN_SECOND_ORDER, LEVEL6_REGION_ORDER
+from .catalog import STANDINGS_ZONES, HOME_LEVELS, FSS_HUB, DEVELOPMENT_HUB, REGIONS, YOUTH_IMAGES, WOMEN_SECOND_ORDER, LEVEL6_REGION_ORDER
 
 
 def _league_rows(cid=1, section='senior', level=None):
@@ -39,6 +39,33 @@ def _trophy_media(history_key, comp_type, alt):
     return f'<div class="honour-trophy"><img src="{src}" alt="{alt}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'{fallback}\';"></div>'
 
 
+_ZONE_ORDER=('champion','ucl','uel','uecl','promotion','playoff','barrage','playout','relegation')
+_ZONE_DEFAULT_LABELS={'champion':'Šampion','ucl':'Liga šampiona','uel':'Liga Evrope','uecl':'Liga konferencija',
+    'promotion':'Ulazak u viši rang','playoff':'Plej-of','barrage':'Baraž','playout':'Plej-aut','relegation':'Ispadanje'}
+
+
+def _zone_from_note(note):
+    n=_fold(note)
+    if not n: return None
+    if 'baraz' in n: return 'barrage'
+    if 'play out' in n or 'playout' in n: return 'playout'
+    if 'play off' in n or 'doigravanje' in n or 'playoff' in n: return 'playoff'
+    if 'viseg ranga' in n or '▲' in note: return 'promotion'
+    if 'nizeg ranga' in n or '▼' in note: return 'relegation'
+    return None
+
+
+def _zone_for(owner_type, owner_id, row):
+    """(kind,label) for a standings row: config first, then the source's own note."""
+    if owner_type=='league':
+        try: pos=int(row['position'])
+        except Exception: pos=None
+        for lo,hi,kind,label in STANDINGS_ZONES.get(int(owner_id),()):
+            if pos is not None and lo<=pos<=hi: return kind,label
+    kind=_zone_from_note(row['position_note'] or '')
+    return (kind,_ZONE_DEFAULT_LABELS[kind]) if kind else (None,None)
+
+
 def _standings_block(owner_type,owner_id):
     comp,rows=engine.standings_for_owner(owner_type,int(owner_id))
     if not comp:
@@ -47,7 +74,7 @@ def _standings_block(owner_type,owner_id):
     head='<tr><th>#</th><th>Tim</th><th>OU</th><th>P</th><th>N</th><th>I</th>'
     if has_goals: head+='<th>DG</th><th>PG</th><th>GR</th>'
     head+='<th>B</th></tr>'
-    body=[]
+    body=[]; zones_seen={}
     link_con=connect() if owner_type=='league' else None
     for r in rows:
         club_id=r['club_id']
@@ -55,13 +82,20 @@ def _standings_block(owner_type,owner_id):
             club_id=engine._standing_match_club(link_con,int(owner_id),r['team_name'])
         team=f'<a href="/club?id={club_id}">{esc(r["team_name"])}</a>' if club_id else esc(r['team_name'])
         pos=str(r['position'] or '')+(f' <small>{esc(r["position_note"])}</small>' if r['position_note'] else '')
-        line=f'<tr><td>{pos}</td><td>{team}</td><td>{r["played"] if r["played"] is not None else ""}</td><td>{r["wins"] if r["wins"] is not None else ""}</td><td>{r["draws"] if r["draws"] is not None else ""}</td><td>{r["losses"] if r["losses"] is not None else ""}</td>'
+        zkind,zlabel=_zone_for(owner_type,owner_id,r)
+        if zkind: zones_seen.setdefault(zkind,zlabel)
+        zcls=f' class="zone zone-{zkind}" title="{esc(zlabel)}"' if zkind else ''
+        line=f'<tr{zcls}><td>{pos}</td><td>{team}</td><td>{r["played"] if r["played"] is not None else ""}</td><td>{r["wins"] if r["wins"] is not None else ""}</td><td>{r["draws"] if r["draws"] is not None else ""}</td><td>{r["losses"] if r["losses"] is not None else ""}</td>'
         if has_goals:
             line+=f'<td>{r["goals_for"] if r["goals_for"] is not None else ""}</td><td>{r["goals_against"] if r["goals_against"] is not None else ""}</td><td>{r["goal_diff"] if r["goal_diff"] is not None else ""}</td>'
         line+=f'<td><b>{r["points"] if r["points"] is not None else ""}</b></td></tr>'; body.append(line)
     if link_con is not None: link_con.close()
     meta=f'{esc(comp["season"] or "")} · {esc((comp["source_type"] or "").upper())} · osveženo {esc(comp["updated_at"] or "")}'
-    return f'<section class="standings"><h2>Tabela</h2><p class="standingsmeta">{meta}</p><div class="tablewrap"><table><thead>{head}</thead><tbody>{"".join(body)}</tbody></table></div></section>'
+    legend=''
+    if zones_seen:
+        items=''.join(f'<span class="zone-{k}"><i></i>{esc(zones_seen[k])}</span>' for k in _ZONE_ORDER if k in zones_seen)
+        legend=f'<div class="zonelegend">{items}</div>'
+    return f'<section class="standings"><h2>Tabela</h2><p class="standingsmeta">{meta}</p><div class="tablewrap"><table><thead>{head}</thead><tbody>{"".join(body)}</tbody></table></div>{legend}</section>'
 
 
 def home(msg=''):
@@ -622,3 +656,75 @@ def mapping_workbench(cid=1,level=4,msg=''):
     tools=f'''<div class="pageactions"><form data-busy="1" method="post" action="/mapping/retry_level"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button>Retry ALL unresolved/review</button></form><form data-busy="1" method="post" action="/mapping/recheck_no_tm"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="secondary">Recheck NO TM YET</button></form><a class="button secondary" href="/export_level_mapping_issues?country_id={cid}&level={level}">Open Mapping XLSX</a><a class="button secondary" href="/export_level_mapping_backup?country_id={cid}&level={level}">Backup ZIP</a><form method="post" action="/mapping/import" enctype="multipart/form-data"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><input type="file" name="mapping_file" accept=".xlsx" required><button class="secondary">Import XLSX</button></form></div>'''
     body=notice(msg)+crumb([('SUPERADMIN',f'/admin/sync?country_id={cid}'),(f'Mapping Level {level}',None)])+f'<h1>Mapping Workbench · Level {level}</h1>'+metric_strip([('AKTIVNI',total),('MAPPED',mapped),('REVIEW',review),('UNRESOLVED',unresolved),('NO TM',no_tm)])+tools+f'<div class="tablewrap"><table><thead><tr><th>Liga</th><th>Klub</th><th>Status</th><th>Kandidat</th><th>Akcije</th><th>Ručni URL</th></tr></thead><tbody>{"".join(trs) if trs else "<tr><td colspan=\"6\">Svi aktivni klubovi su verifikovani.</td></tr>"}</tbody></table></div>'
     return layout('Mapping Workbench',body,admin=True)
+
+
+# ---------------------------------------------------------------------------
+# Search (clubs + players + national-team players)
+# ---------------------------------------------------------------------------
+_SEARCH_FOLD=str.maketrans({'č':'c','ć':'c','š':'s','ž':'z','đ':'dj','Č':'c','Ć':'c','Š':'s','Ž':'z','Đ':'dj'})
+
+
+def _fold(v):
+    """Lower-case and strip Serbian diacritics so 'cukaricki' finds 'Čukarički'."""
+    import unicodedata
+    s=str(v or '').translate(_SEARCH_FOLD).lower()
+    return ''.join(ch for ch in unicodedata.normalize('NFKD',s) if not unicodedata.combining(ch))
+
+
+def search_data(q, limit=8):
+    q=(q or '').strip()
+    if len(q)<2: return {'clubs':[],'players':[]}
+    needle='%'+_fold(q)+'%'
+    # top clubs are stored under English names ('Red Star Belgrade'); match their Serbian display names too
+    aliases=[raw for raw,sr in CLUB_SR_NAMES.items() if _fold(q) in _fold(sr)] or ['\x00']
+    marks=','.join('?' for _ in aliases)
+    con=connect(); con.create_function('fold',1,_fold,deterministic=True)
+    try:
+        clubs=con.execute(f'''SELECT c.id,c.name,c.cm_name,ci.crest_local,l.name league_name,l.level
+            FROM clubs c JOIN leagues l ON l.id=c.league_id LEFT JOIN club_info ci ON ci.club_id=c.id
+            WHERE COALESCE(c.source_active,1)=1 AND COALESCE(l.source_active,1)=1
+              AND (fold(c.name) LIKE ? OR fold(COALESCE(c.cm_name,'')) LIKE ? OR fold(COALESCE(c.tm_name,'')) LIKE ?
+                   OR c.name IN ({marks}) OR c.cm_name IN ({marks}))
+            ORDER BY (COALESCE(l.section,'senior')<>'senior'), COALESCE(l.level,99), c.name LIMIT ?''',(needle,needle,needle,*aliases,*aliases,int(limit))).fetchall()
+        players=con.execute('''SELECT p.name,p.position,p.date_of_birth,p.market_value,c.id club_id,c.name club_name,c.cm_name,'club' kind
+            FROM players p JOIN clubs c ON c.id=p.club_id JOIN leagues l ON l.id=c.league_id
+            WHERE COALESCE(c.source_active,1)=1 AND fold(p.name) LIKE ?
+            ORDER BY (COALESCE(l.section,'senior')<>'senior'), COALESCE(l.level,99), p.name LIMIT ?''',(needle,int(limit))).fetchall()
+        nat=con.execute('''SELECT p.name,p.position,p.date_of_birth,p.market_value,nt.id club_id,nt.name club_name,NULL cm_name,'national' kind
+            FROM national_team_players p JOIN national_teams nt ON nt.id=p.national_team_id
+            WHERE fold(p.name) LIKE ? ORDER BY p.name LIMIT ?''',(needle,int(limit))).fetchall()
+    finally:
+        con.close()
+    out_clubs=[{'name':_display_club_name(c),'league':_display_league_name(c['league_name']),
+                'crest':('/'+str(c['crest_local']).replace('\\','/').lstrip('/')) if c['crest_local'] else '',
+                'href':f'/club?id={c["id"]}'} for c in clubs]
+    out_players=[]
+    for p in list(players)+list(nat):
+        team=_display_club_name((p['cm_name'] or p['club_name']) if engine.ui_lang()=='en' else (p['club_name'] or p['cm_name'] or '')) if p['kind']=='club' else p['club_name']
+        href=f'/club?id={p["club_id"]}#players' if p['kind']=='club' else f'/national_team?id={p["club_id"]}'
+        out_players.append({'name':p['name'],'team':team,'position':engine.tr_text(p['position'] or '',engine.ui_lang()),
+                            'pos':_pos_group(p['position']),'value':p['market_value'] or '','href':href})
+    return {'clubs':out_clubs,'players':out_players[:int(limit)*2]}
+
+
+def search(q, msg=''):
+    data=search_data(q, limit=40)
+    qs=esc(q or '')
+    form=f'<form class="searchpage-form" action="/search" method="get"><input type="search" name="q" value="{qs}" placeholder="Klub ili igrač…" autofocus><button>Pretraži</button></form>'
+    if len((q or '').strip())<2:
+        body=f'<h1>Pretraga</h1>{form}<p class="muted">Upiši najmanje 2 slova. Slova č, ć, š, ž, đ nisu obavezna — „cukaricki” pronalazi „Čukarički”.</p>'
+        return layout('Pretraga',notice(msg)+body)
+    def club_item(c):
+        crest=f'<img src="{esc(c["crest"])}" alt="" loading="lazy">' if c['crest'] else '<span class="crestfallback">GRB</span>'
+        return f'<a class="resultcard" href="{esc(c["href"])}"><span class="resultcrest">{crest}</span><span><b>{esc(c["name"])}</b><small>{esc(c["league"])}</small></span></a>'
+    def player_item(p):
+        short=dict((k,s_) for k,_,s_,_ in _POS_GROUPS).get(p['pos'],'—')
+        return f'<a class="resultrow" href="{esc(p["href"])}"><span class="pos pos-{p["pos"]}">{short}</span><span class="resultname"><b>{esc(p["name"])}</b><small>{esc(p["team"])} · {esc(p["position"])}</small></span><span class="resultvalue">{esc(p["value"]) if p["value"] not in ("-","") else ""}</span></a>'
+    clubs=''.join(club_item(c) for c in data['clubs'])
+    players=''.join(player_item(p) for p in data['players'])
+    total=len(data['clubs'])+len(data['players'])
+    body=f'<h1>Pretraga</h1>{form}<p class="muted">{total} rezultata za „{qs}”</p>'
+    if clubs: body+=f'<h2>Klubovi <small>({len(data["clubs"])})</small></h2><div class="resultgrid">{clubs}</div>'
+    if players: body+=f'<h2>Igrači <small>({len(data["players"])})</small></h2><div class="resultlist">{players}</div>'
+    if not total: body+='<div class="history-empty"><p>Nema rezultata.</p><small>Proveri da li je ime ispravno napisano ili probaj samo deo imena.</small></div>'
+    return layout('Pretraga',notice(msg)+body)
