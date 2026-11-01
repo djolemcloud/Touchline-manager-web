@@ -82,18 +82,21 @@ def page(cid=1,msg='',details=False):
     team_opts=''.join(f'<option value="{t["id"]}">{esc(t["name"])}</option>' for t in teams)
     def form(action,label,extra='',primary=False):
         # "01 · SASTAVI LIGA" -> numbered step button; the visible text stays identical
-        m=re.match(r'^(\d{2}|POSEBNO)\s*·\s*(.+)$',label)
+        # translate the whole label first (dictionary has full labels), then split number from text
+        label=engine.tr_text(label,engine.ui_lang())
+        if engine.ui_lang()=='sr': label=label.replace('TM MAPPING','TM MAPIRANJE').replace('+ STAFF','+ STRUČNI ŠTAB').replace('ROSTERI','SASTAVI')
+        m=re.match(r'^(\d{2}|POSEBNO|EXTRA)\s*·\s*(.+)$',label)
         if m:
-            inner=f'<b class="stepno">{esc(m.group(1) if m.group(1)!="POSEBNO" else "★")}</b> <span>{esc(m.group(2))}</span>'
+            inner=f'<b class="stepno">{esc(m.group(1) if m.group(1).isdigit() else "★")}</b> <span>{esc(m.group(2))}</span>'
         else:
             inner=f'<span>{esc(label)}</span>'
         cls='bigaction' if primary else 'step'
         return f'<form data-busy="1" method="post" action="{action}"><input type="hidden" name="country_id" value="{cid}">{extra}<button class="{cls}" title="{esc(label)}">{inner}</button></form>'
 
     if details:
-        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljna tabela je učitana na zahtev.</p><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Nivo</th><th>Liga</th><th>Klubovi</th><th>TM</th><th>Review</th><th>NO TM</th><th>Igrači</th><th>Staff</th></tr></thead><tbody>{rows}</tbody></table></div><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}">Sakrij detaljni status</a></div></section>'''
+        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljna tabela je učitana na zahtev.</p><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Nivo</th><th>Liga</th><th>Klubovi</th><th>TM</th><th>Za proveru</th><th>Nema TM</th><th>Igrači</th><th>Stručni štab</th></tr></thead><tbody>{rows}</tbody></table></div><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}">Sakrij detaljni status</a></div></section>'''
     else:
-        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljni brojači po svih {len(leagues)} liga više se ne računaju pri svakom ulasku u Superadmin. Učitaj ih samo kada su potrebni.</p><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}&details=1">Učitaj detaljni status liga</a></div></section>'''
+        status_table=f'''<section class="adminpanel" id="a-status"><small>DIJAGNOSTIKA</small><h2>Status svih liga</h2><p>Detaljni brojači za svih {len(leagues)} liga ne računaju se pri svakom ulasku u Superadmin. Učitaj ih samo kada su potrebni.</p><div class="pageactions"><a class="button secondary" href="/admin/sync?country_id={cid}&details=1">Učitaj detaljni status liga</a></div></section>'''
 
     nav_items=[('a-night','Noćna sinhronizacija'),('a-global','Sve lige'),('a-national','Reprezentacije'),('a-top','SuperLiga + Prva liga'),('a-history','Istorija'),('a-lower','Nivo 3–6'),('a-youth','Omladinska'),('a-women','Ženski fudbal'),('a-advanced','Napredno'),('a-status','Dijagnostika')]
     adminnav='<nav class="adminnav" aria-label="SUPERADMIN">'+''.join(f'<a href="#{k}">{esc(v)}</a>' for k,v in nav_items)+'</nav>'
@@ -120,7 +123,7 @@ def page(cid=1,msg='',details=False):
 <section class="adminpanel nationaladmin" id="a-national"><small>NACIONALNE SELEKCIJE</small><h2>Reprezentacije · rosteri, staff i tabele</h2><p>Sve operacije reprezentacija su na jednom mestu. Za reprezentacije su primenljive 01 (roster/staff) i 07 (tabela); klupske operacije 02–06 se ne primenjuju. Srbija A je automatski vezana za UEFA Nations League A · Grupa A2; U21 trenutno nema ligašku tabelu.</p><div class="adminactions">
 {form('/admin/action/national','01 · REPREZENTACIJE · ROSTERI + STAFF','<label class="check"><input type="checkbox" name="fetch_dob" value="1"> DOB stručnog štaba</label>')}
 {form('/admin/action/national_standings','07 · REPREZENTACIJE · TABELE')}
-</div>{nt_all}<details class="admindetails"><summary>Napredni override izvora tabele</summary><form method="post" action="/admin/action/national_standings_source"><input type="hidden" name="country_id" value="{cid}"><select name="team_id">{team_opts}</select><input name="standings_url" placeholder="FSS / UEFA / Transfermarkt URL za override" class="wideinput"><button>Sačuvaj / promeni izvor</button></form></details></section>
+</div>{nt_all}<details class="admindetails"><summary>Napredno: ručni izvor tabele</summary><form method="post" action="/admin/action/national_standings_source"><input type="hidden" name="country_id" value="{cid}"><select name="team_id">{team_opts}</select><input name="standings_url" placeholder="FSS / UEFA / Transfermarkt URL (ručni izvor)" class="wideinput"><button>Sačuvaj / promeni izvor</button></form></details></section>
 
 <section class="adminpanel" id="a-top"><small>TOP TIER · NIVO 1–2</small><h2>SuperLiga + Prva liga Srbije</h2><p>{section_summary(top)}</p><div class="adminactions">
 {form('/admin/action/top_memberships','01 · SASTAVI LIGA')}
@@ -132,12 +135,12 @@ def page(cid=1,msg='',details=False):
 {form('/admin/action/top_standings','07 · TABELE')}
 </div></section>
 
-<section class="adminpanel historyadmin" id="a-history"><small>ISTORIJSKA BAZA · EXCEL MASTER</small><h2>Prvenstvo · Kup · Drugi rang · Srpske lige</h2><p>Od verzije 1.6.4 kompletna DOMAĆA LIGAŠKA istorija u History sloju ima samo jedan dozvoljeni izvor: zajednički Excel <b>HISTORY/TOUCHLINE_HISTORY_MASTER.xlsx</b>, isti format koji će koristiti i Touchline Manager.</p>
+<section class="adminpanel historyadmin" id="a-history"><small>ISTORIJSKA BAZA · EXCEL MASTER</small><h2>Prvenstvo · Kup · Drugi rang · Srpske lige</h2><p>Od verzije 1.6.4 domaća ligaška istorija ima samo jedan dozvoljeni izvor: zajednički Excel <b>HISTORY/TOUCHLINE_HISTORY_MASTER.xlsx</b>, isti format koji koristi i Touchline Manager.</p>
 <div class="adminactions">
 {form('/admin/action/history_excel_import','ISTORIJA · UVEZI / OSVEŽI MASTER EXCEL')}
 {form('/admin/action/history_excel_validate','ISTORIJA · PROVERI MASTER EXCEL')}
 </div>
-<p class="muted">LIGA = isključivo Excel. RSSSF/Wikipedia/COMET ne mogu više da upisuju ligaške redove u klupsku istoriju. Aktuelne tabele, sastavi, transferi i evropski uspesi ostaju odvojeni i ne diraju se.</p></section>
+<p class="muted">Ligaška istorija dolazi isključivo iz Excela. RSSSF/Wikipedia/COMET više ne upisuju ligaške redove u istoriju klubova. Aktuelne tabele, sastavi, transferi i evropski uspesi su odvojeni i ne menjaju se.</p></section>
 
 <section class="adminpanel" id="a-lower"><small>NIŽE SENIORSKE · NIVO 3–6</small><h2>Srpske · Zonske · Okružne · Opštinske</h2><p>{section_summary(lower)}</p><div class="adminactions">
 {form('/admin/action/lower_memberships','01 · SASTAVI LIGA')}

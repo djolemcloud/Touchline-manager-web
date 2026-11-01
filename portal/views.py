@@ -530,10 +530,10 @@ def club_history(club_id,msg=''):
         labels=[]
         if wins:
             win_label='Osvajač' if kind=='cup' else 'Prvak'
-            labels.append(f'{win_label} {wins} ×')
+            labels.append(f'{engine.tr_text(win_label,engine.ui_lang())} {wins} ×')
         if runners:
             run_label='Vicešampion' if kind=='league' else 'Finalista'
-            labels.append(f'{run_label} {runners} ×')
+            labels.append(f'{engine.tr_text(run_label,engine.ui_lang())} {runners} ×')
         span=(r['first_season'] or '') if r['first_season']==r['last_season'] else f'{r["first_season"] or ""}–{r["last_season"] or ""}'
         high.append(f'<article class="honour-card {esc(kind)}">{_trophy_media(r["history_key"] if "history_key" in r.keys() else "",kind,comp)}<small>{esc(span)}</small><h3>{esc(comp)}</h3><strong>{esc(" · ".join(labels))}</strong></article>')
     highlight_block='<div class="honours-grid">'+''.join(high)+'</div>' if high else '<div class="history-empty"><p>Nema još unetih istorijskih sezona za ovaj klub.</p><small>Istorijski model je spreman; podaci će se dopunjavati iz proverenih izvora.</small></div>'
@@ -592,7 +592,7 @@ def league_history(lid,msg=''):
     league_name=_display_league_name(l['name'])
     hmeta=history_data.league_history_meta(lid)
     era=(hmeta['active_from'] if hmeta and hmeta['active_from'] else '—')
-    hero=f'<section class="history-hero league-history-hero"><div class="history-year">{esc(era)}<br><span>→</span><br>DANAS</div><div><small>ISTORIJA TAKMIČENJA</small><h1>{esc(league_name)}</h1><p>Šampioni po sezonama i najtrofejniji klubovi iz zajedničkog History Excel mastera.</p></div></section>'
+    hero=f'<section class="history-hero league-history-hero"><div class="history-year">{esc(era)}<br><span>→</span><br>DANAS</div><div><small>ISTORIJA TAKMIČENJA</small><h1>{esc(league_name)}</h1><p>Šampioni po sezonama i najtrofejniji klubovi.</p></div></section>'
     page=notice(msg)+crumb([('Srbija','/'),(league_name,f'/league?id={lid}'),('Istorija',None)])+hero+_league_tabs(lid,'history')+'<h2>Najtrofejniji klubovi</h2>'+rank_block+'<h2>Šampioni po sezonama</h2>'+champ_table
     return layout(league_name+' · '+engine.tr_text('Istorija',engine.ui_lang()),page)
 
@@ -620,7 +620,7 @@ def national_team(team_id,msg=''):
             pass
     standings=_standings_block('national_team',team_id)
     if not t['standings_source_url'] and (t['standings_competition_name'] or ''):
-        standings=f'<section class="standings"><h2>Tabela</h2><div class="panel"><p>{esc(t["standings_competition_name"])} trenutno nema ligašku tabelu za prikaz.</p></div></section>'
+        standings=f'<section class="standings"><h2>Tabela</h2><div class="panel"><p><b>{esc(t["standings_competition_name"])}</b></p><p>Trenutno nema ligašku tabelu za prikaz.</p></div></section>'
     comp_label=''
     if t['standings_competition_name']:
         comp_label=f'<p><b>{esc(t["standings_competition_name"])}</b>{(" · Grupa "+esc(t["standings_group_code"])) if t["standings_group_code"] else ""}</p>'
@@ -628,14 +628,43 @@ def national_team(team_id,msg=''):
     return layout(t['name'],body)
 
 
+_FEE_SR={'free transfer':'Slobodan transfer','loan transfer':'Pozajmica','end of loan':'Kraj pozajmice','loan fee:':'Naknada za pozajmicu','-':'—','?':'—','':'—'}
+_CLUB_SR={'without club':'Bez kluba','unknown':'Nepoznato','retired':'Kraj karijere','career break':'Pauza u karijeri'}
+
+
+def _undouble(v):
+    """Transfermarkt cells sometimes come doubled ('Without ClubWithout Club')."""
+    v=str(v or '').strip(); n=len(v)
+    return v[:n//2] if n and n%2==0 and v[:n//2]==v[n//2:] else v
+
+
+def _fee_label(v):
+    raw=_undouble(v); return _FEE_SR.get(raw.lower(),raw)
+
+
+def _other_club_label(v):
+    raw=_undouble(v); return _CLUB_SR.get(raw.lower(),raw) or '—'
+
+
 def transfers(club_id,msg=''):
     con=connect(); c=con.execute('SELECT c.*,l.name league_name FROM clubs c JOIN leagues l ON l.id=c.league_id WHERE c.id=?',(int(club_id),)).fetchone()
     if not c: con.close(); return layout('Not found','<h1>Klub nije pronađen</h1>')
     sid=engine.current_season_id(); rows=con.execute('SELECT * FROM club_transfers WHERE club_id=? AND season_id=? ORDER BY direction,transfer_date,player_name',(int(club_id),sid)).fetchall(); summary=con.execute('SELECT * FROM club_transfer_summary WHERE club_id=? AND season_id=?',(int(club_id),sid)).fetchone(); con.close()
-    tr=''.join(f'<tr><td>{esc(r["direction"])}</td><td>{esc(r["player_name"])}</td><td>{esc(r["position"])}</td><td>{esc(r["other_club"])}</td><td>{esc(r["fee"])}</td><td>{esc(r["transfer_date"])}</td></tr>' for r in rows)
+    club_name=_display_club_name(c)
+    def table(items, club_header):
+        if not items: return '<div class="history-empty compact"><p>Nema transfera.</p></div>'
+        body=''.join(f'<tr><td class="name">{esc(r["player_name"])}</td><td>{_pos_cell(r)}</td><td>{esc(_other_club_label(r["other_club"]))}</td><td class="num">{esc(_fee_label(r["fee"]))}</td><td class="hide-sm">{esc(r["transfer_date"]) or "—"}</td></tr>' for r in items)
+        return f'<div class="tablewrap"><table class="squadtable"><thead><tr><th>Igrač</th><th>Pozicija</th><th>{club_header}</th><th class="num">Naknada</th><th class="hide-sm">Datum</th></tr></thead><tbody>{body}</tbody></table></div>'
+    arrivals=[r for r in rows if r['direction']=='arrival']; departures=[r for r in rows if r['direction']!='arrival']
     exp=f'<div class="pageactions"><a class="button" href="/export_club_transfers?id={club_id}">Transferi XLSX</a></div>'
-    summ=f'<div class="panel"><b>{esc(summary["season_label"] if summary else engine.season_label_from_id(sid))}</b> · {len(rows)} transfer zapisa</div>'
-    return layout('Transferi',notice(msg)+crumb([(c['cm_name'] or c['name'],f'/club?id={c["id"]}'),('Transferi',None)])+f'<h1>Transferi · {esc(c["cm_name"] or c["name"])}</h1>{exp}{summ}<div class="tablewrap"><table><thead><tr><th>Smer</th><th>Igrač</th><th>Pozicija</th><th>Drugi klub</th><th>Naknada</th><th>Datum</th></tr></thead><tbody>{tr}</tbody></table></div>')
+    season=esc(summary['season_label'] if summary else engine.season_label_from_id(sid))
+    stats=[('SEZONA',season),('DOLASCI',len(arrivals)),('ODLASCI',len(departures))]
+    if summary and summary['balance']: stats.append(('BILANS',summary['balance']))
+    body=(notice(msg)+crumb([(club_name,f'/club?id={c["id"]}'),('Transferi',None)])+f'<h1>Transferi · {esc(club_name)}</h1>'
+          +_club_tabs(c['id'],'transfers')+exp+metric_strip(stats)
+          +f'<h2>Dolasci <small>({len(arrivals)})</small></h2>'+table(arrivals,'Iz kluba')
+          +f'<h2>Odlasci <small>({len(departures)})</small></h2>'+table(departures,'U klub'))
+    return layout('Transferi · '+club_name,body)
 
 
 def mapping_workbench(cid=1,level=4,msg=''):
@@ -645,17 +674,17 @@ def mapping_workbench(cid=1,level=4,msg=''):
     review=sum((r['tm_match_status'] or '').lower()=='review' for r in rows); no_tm=sum((r['tm_match_status'] or '').lower()=='no_tm_yet' for r in rows); unresolved=len(rows)-review-no_tm
     trs=[]
     for r in rows:
-        status=(r['tm_match_status'] or 'unresolved').lower(); label='NO TM YET' if status=='no_tm_yet' else status.upper(); candidate='—'
+        status=(r['tm_match_status'] or 'unresolved').lower(); label={'no_tm_yet':'JOŠ NEMA TM','review':'ZA PROVERU','unresolved':'NEREŠENO','matched':'MAPIRANO','manual':'RUČNO'}.get(status,status.upper()); candidate='—'
         if r['tm_candidate_url']:
             candidate=f'<a href="{esc(r["tm_candidate_url"])}" target="_blank">{esc(r["tm_candidate_name"] or r["tm_candidate_url"])}</a>'
-        actions=f'''<div class="inlineactions"><form method="post" action="/mapping/retry"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="secondary">Retry</button></form>'''
-        if r['tm_candidate_url']: actions+=f'''<form method="post" action="/mapping/accept"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button>Accept</button></form>'''
-        actions+=f'''<form method="post" action="/mapping/no_tm"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="danger">NO TM YET</button></form></div>'''
-        manual=f'''<form class="manualmap" method="post" action="/mapping/manual"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><input name="tm_url" placeholder="Transfermarkt URL"><button>Save</button></form>'''
-        trs.append(f'<tr><td>{esc(r["league_name"])}</td><td><b>{esc(r["source_name"] or r["name"])}</b></td><td><span class="matchbadge {esc(status)}">{esc(label)}</span></td><td>{candidate}</td><td>{actions}</td><td>{manual}</td></tr>')
-    tools=f'''<div class="pageactions"><form data-busy="1" method="post" action="/mapping/retry_level"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button>Retry ALL unresolved/review</button></form><form data-busy="1" method="post" action="/mapping/recheck_no_tm"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="secondary">Recheck NO TM YET</button></form><a class="button secondary" href="/export_level_mapping_issues?country_id={cid}&level={level}">Open Mapping XLSX</a><a class="button secondary" href="/export_level_mapping_backup?country_id={cid}&level={level}">Backup ZIP</a><form method="post" action="/mapping/import" enctype="multipart/form-data"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><input type="file" name="mapping_file" accept=".xlsx" required><button class="secondary">Import XLSX</button></form></div>'''
-    body=notice(msg)+crumb([('SUPERADMIN',f'/admin/sync?country_id={cid}'),(f'Mapping Level {level}',None)])+f'<h1>Mapping Workbench · Level {level}</h1>'+metric_strip([('AKTIVNI',total),('MAPPED',mapped),('REVIEW',review),('UNRESOLVED',unresolved),('NO TM',no_tm)])+tools+f'<div class="tablewrap"><table><thead><tr><th>Liga</th><th>Klub</th><th>Status</th><th>Kandidat</th><th>Akcije</th><th>Ručni URL</th></tr></thead><tbody>{"".join(trs) if trs else "<tr><td colspan=\"6\">Svi aktivni klubovi su verifikovani.</td></tr>"}</tbody></table></div>'
-    return layout('Mapping Workbench',body,admin=True)
+        actions=f'''<div class="inlineactions"><form method="post" action="/mapping/retry"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="secondary">Pokušaj ponovo</button></form>'''
+        if r['tm_candidate_url']: actions+=f'''<form method="post" action="/mapping/accept"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button>Prihvati</button></form>'''
+        actions+=f'''<form method="post" action="/mapping/no_tm"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="danger">JOŠ NEMA TM</button></form></div>'''
+        manual=f'''<form class="manualmap" method="post" action="/mapping/manual"><input type="hidden" name="club_id" value="{r['id']}"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><input name="tm_url" placeholder="Transfermarkt URL"><button>Sačuvaj</button></form>'''
+        trs.append(f'<tr><td>{esc(_display_league_name(r["league_name"]))}</td><td><b>{esc(r["source_name"] or r["name"])}</b></td><td><span class="matchbadge {esc(status)}">{esc(label)}</span></td><td>{candidate}</td><td>{actions}</td><td>{manual}</td></tr>')
+    tools=f'''<div class="pageactions"><form data-busy="1" method="post" action="/mapping/retry_level"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button>Pokušaj ponovo sve nerešene / za proveru</button></form><form data-busy="1" method="post" action="/mapping/recheck_no_tm"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><button class="secondary">Ponovo proveri JOŠ NEMA TM</button></form><a class="button secondary" href="/export_level_mapping_issues?country_id={cid}&level={level}">Nerešena mapiranja XLSX</a><a class="button secondary" href="/export_level_mapping_backup?country_id={cid}&level={level}">Rezervna kopija mapiranja ZIP</a><form method="post" action="/mapping/import" enctype="multipart/form-data"><input type="hidden" name="country_id" value="{cid}"><input type="hidden" name="level" value="{level}"><input type="file" name="mapping_file" accept=".xlsx" required><button class="secondary">Uvezi XLSX</button></form></div>'''
+    body=notice(msg)+crumb([('SUPERADMIN',f'/admin/sync?country_id={cid}'),(f'Mapiranje · Nivo {level}',None)])+f'<h1>Radna tabla mapiranja · Nivo {level}</h1>'+metric_strip([('AKTIVNI',total),('MAPIRANO',mapped),('ZA PROVERU',review),('NEREŠENO',unresolved),('NEMA TM',no_tm)])+tools+f'<div class="tablewrap"><table><thead><tr><th>Liga</th><th>Klub</th><th>Status</th><th>Kandidat</th><th>Akcije</th><th>Ručni URL</th></tr></thead><tbody>{"".join(trs) if trs else "<tr><td colspan=\"6\">Svi aktivni klubovi su verifikovani.</td></tr>"}</tbody></table></div>'
+    return layout('Radna tabla mapiranja',body,admin=True)
 
 
 # ---------------------------------------------------------------------------

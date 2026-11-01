@@ -624,6 +624,44 @@ SR_EN.update(_EXTRA_HISTORY_UI)
 EN_SR.update({v:k for k,v in _EXTRA_HISTORY_UI.items()})
 # 2.0 UI refresh labels (sr -> en only, so English source data is never rewritten in SR mode)
 SR_EN.update({'Golmani':'Goalkeepers','Odbrana':'Defence','Vezni red':'Midfield','Napad':'Attack','Ostali':'Other','Rođen':'Born','Meni':'Menu','Stadion':'Stadium','Kapacitet':'Capacity','Pretraga':'Search','Pretraži':'Search','Pretraži klub ili igrača':'Search club or player','Klub ili igrač…':'Club or player…','Nema rezultata.':'No results.','Svi rezultati':'All results','Plej-of · borba za titulu':'Play-off · championship group','Plej-aut · borba za opstanak':'Play-out · relegation group'})
+SR_EN.update({
+    # public pages
+    'Dresovi 2026/27':'Kits 2026/27','1. garnitura':'Home kit','2. garnitura':'Away kit','3. garnitura':'Third kit',
+    'Tim menadžer':'Team manager','Drugi klub':'Other club','Akcije':'Actions','Klub':'Club',
+    'Trenutno nema ligašku tabelu za prikaz.':'There is no league table to show at the moment.',
+    'Upiši najmanje 2 slova. Slova č, ć, š, ž, đ nisu obavezna — „cukaricki” pronalazi „Čukarički”.':'Type at least 2 letters. Serbian letters č, ć, š, ž, đ are optional — “cukaricki” finds “Čukarički”.',
+    'Šampioni po sezonama i najtrofejniji klubovi.':'Champions by season and the most decorated clubs.',
+    'Dolasci':'Arrivals','Odlasci':'Departures','Iz kluba':'From','U klub':'To','Naknada':'Fee','Datum':'Date',
+    'Slobodan transfer':'Free transfer','Pozajmica':'Loan','Kraj pozajmice':'End of loan','Naknada za pozajmicu':'Loan fee',
+    'Bez kluba':'Without club','Nepoznato':'Unknown','Nema transfera.':'No transfers.',
+    # SUPERADMIN
+    'Centar sinhronizacije':'Sync Center','Noćna sinhronizacija':'Nightly sync','Sve lige':'All leagues',
+    'Reprezentacije':'National teams','SuperLiga + Prva liga':'SuperLiga + First League','Nivo 3–6':'Levels 3–6',
+    'Omladinska':'Youth','Ženski fudbal':"Women's football",'Napredno':'Advanced','Dijagnostika':'Diagnostics','DIJAGNOSTIKA':'DIAGNOSTICS',
+    '01 · SASTAVI SVIH LIGA':'01 · ALL-LEAGUE MEMBERSHIPS','02 · TM MAPPING SVIH LIGA':'02 · TM MAPPING · ALL LEAGUES',
+    '05 · GRBOVI':'05 · CRESTS','06 · INFORMACIJE O KLUBOVIMA':'06 · CLUB INFORMATION','07 · TABELE':'07 · TABLES',
+    '04 · TRANSFERI':'04 · TRANSFERS','01 · SASTAVI LIGA':'01 · LEAGUE MEMBERSHIPS','03 · IGRAČI + STAFF':'03 · PLAYERS + STAFF',
+    '03 · IGRAČICE + STAFF':'03 · PLAYERS (W) + STAFF','01 · REPREZENTACIJE · ROSTERI + STAFF':'01 · NATIONAL TEAMS · ROSTERS + STAFF',
+    '07 · REPREZENTACIJE · TABELE':'07 · NATIONAL TEAMS · TABLES','POSEBNO · OTKRIJ / USKLADI SVE LIGE NIVO 3–6':'EXTRA · DISCOVER / SYNC ALL LEAGUES LEVEL 3–6',
+    'POSEBNO · FSS ROSTERI SUPER + PRVA':'EXTRA · FSS ROSTERS SUPER + FIRST',
+    'ISTORIJA · UVEZI / OSVEŽI MASTER EXCEL':'HISTORY · IMPORT / REFRESH MASTER EXCEL','ISTORIJA · PROVERI MASTER EXCEL':'HISTORY · VALIDATE MASTER EXCEL',
+    'ISTORIJSKA BAZA · EXCEL MASTER':'HISTORY DATABASE · EXCEL MASTER','Prvenstvo · Kup · Drugi rang · Srpske lige':'Championship · Cup · Second tier · Serbian Leagues',
+    'Od verzije 1.6.4 domaća ligaška istorija ima samo jedan dozvoljeni izvor: zajednički Excel':'Since version 1.6.4 the domestic league history has a single allowed source: the shared Excel',
+    ', isti format koji koristi i Touchline Manager.':', the same format used by Touchline Manager.',
+    'Ligaška istorija dolazi isključivo iz Excela. RSSSF/Wikipedia/COMET više ne upisuju ligaške redove u istoriju klubova. Aktuelne tabele, sastavi, transferi i evropski uspesi su odvojeni i ne menjaju se.':'League history comes exclusively from Excel. RSSSF/Wikipedia/COMET no longer write league rows into club history. Current tables, rosters, transfers and European results are separate and are not touched.',
+    'Srpske · Zonske · Okružne · Opštinske':'Serbian · Zone · District · Municipal',
+    'Napredno: ručni izvor tabele':'Advanced: manual table source','FSS / UEFA / Transfermarkt URL (ručni izvor)':'FSS / UEFA / Transfermarkt URL (manual source)',
+    'Učitaj detaljni status liga':'Load detailed league status','Sakrij detaljni status':'Hide detailed status',
+    'Detaljna tabela je učitana na zahtev.':'The detailed table was loaded on request.',
+    'Radna tabla mapiranja':'Mapping workbench','Prihvati':'Accept','Pokušaj ponovo':'Retry','Sačuvaj':'Save','JOŠ NEMA TM':'NO TM YET',
+    'Pokušaj ponovo sve nerešene / za proveru':'Retry all unresolved / review','Ponovo proveri JOŠ NEMA TM':'Recheck NO TM YET',
+    'Nerešena mapiranja XLSX':'Open mapping XLSX','Rezervna kopija mapiranja ZIP':'Mapping backup ZIP','Uvezi XLSX':'Import XLSX',
+    'AKTIVNI':'ACTIVE','MAPIRANO':'MAPPED','ZA PROVERU':'REVIEW','NEREŠENO':'UNRESOLVED','NEMA TM':'NO TM',
+    'Kandidat':'Candidate','Za proveru':'Review','Nema TM':'No TM','Ručni URL':'Manual URL','Svi aktivni klubovi su verifikovani.':'All active clubs are verified.',
+})
+_DYN_EN_EXTRA=[(r'\b(\d+) dostupne garniture\b',r'\1 kits available'),(r'\b(\d+) dostupna garnitura\b',r'\1 kit available'),
+    (r'\b(\d+) rezultata za\b',r'\1 results for'),(r'\bDetaljni brojači za svih (\d+) (?:liga|leagues) ne računaju se pri svakom ulasku u Superadmin\. Učitaj ih samo kada su potrebni\.',r'Detailed counters for all \1 leagues are not computed on every Superadmin visit. Load them only when needed.'),
+    (r'\bRadna tabla mapiranja · Nivo (\d+)\b',r'Mapping workbench · Level \1'),(r'\bMapiranje · Nivo (\d+)\b',r'Mapping · Level \1')]
 
 
 def _translate_dynamic(text, lang):
@@ -698,6 +736,7 @@ def _translate_dynamic(text, lang):
             (r'\bredova\b', 'rows'),
             (r'\btransferi\b', 'transfers'),
             (r'\bTransferi\b', 'Transfers'),
+            *globals().get('_DYN_EN_EXTRA',[]),
         ]
     for pat,repl in reps:
         s=re.sub(pat,repl,s,flags=re.I)
@@ -747,7 +786,14 @@ def _tr_core_cached(core,lang):
     # bundles instead.  This removes the multi-second/minute UI stall.
     out=core
     if embedded_re is not None:
-        out=embedded_re.sub(lambda m: str(embedded_map.get(m.group(0).lower(),m.group(0))),out)
+        def _emb(m):
+            src=m.group(0)
+            if src in table: return str(table[src])          # exact-case entry wins
+            dst=str(embedded_map.get(src.lower(),src))
+            if src.isupper(): return dst.upper()
+            if src[:1].isupper(): return dst[:1].upper()+dst[1:]
+            return dst
+        out=embedded_re.sub(_emb,out)
     return _translate_dynamic(out,lang)
 
 def tr_text(text, lang=None):
@@ -771,7 +817,7 @@ def localize_html(fragment, lang=None):
             new=tr_text(str(node),lang)
             if new!=str(node): node.replace_with(new)
         for tag in soup.find_all(True):
-            for attr in ('title','placeholder','aria-label'):
+            for attr in ('title','placeholder','aria-label','alt'):
                 if tag.has_attr(attr): tag[attr]=tr_text(tag.get(attr),lang)
         return str(soup)
     except Exception:
@@ -783,8 +829,7 @@ def display_league_name(name, lang=None):
     lang=lang or ui_lang()
     raw=str(name or '')
     if lang!='en': return raw
-    exact=tr_text(raw,'en')
-    if exact!=raw: return exact
+    if raw in SR_EN: return str(SR_EN[raw])
     out=raw
     prefixes={
         'Borska okružna liga':'Bor District League','Braničevska okružna liga':'Braničevo District League',
@@ -803,15 +848,22 @@ def display_league_name(name, lang=None):
         'Druga rasinska okružna liga':'Rasina Second District League','Potiska međuopštinska liga':'Tisa Intermunicipal League',
         'Međuopštinska jablanička liga':'Jablanica Intermunicipal League','Jasenička opštinska liga':'Jasenica Municipal League',
         'Prva gradska liga Smederevo':'Smederevo First City League','Prva opštinska liga Lazarevac':'Lazarevac First Municipal League',
+        'Pčinjska okružna liga':'Pčinja District League','Treća liga Kragujevca':'Kragujevac Third League',
+        'Druga gradska liga Smederevo':'Smederevo Second City League','Gradska fudbalska liga':'City Football League',
     }
     for src,dst in sorted(prefixes.items(),key=lambda kv:len(kv[0]),reverse=True):
         if out.startswith(src): out=dst+out[len(src):]; break
     for src,dst in [
         ('Vojvođanska liga','Vojvodina League'),('Srpska liga','Serbian League'),
-        ('Međuopštinska liga','Intermunicipal League'),('opštinska liga','Municipal League'),
-        ('Gradska liga','City League'),('Šumadijska liga','Šumadija League'),
-        (' liga',' League'),('Zona ','Zone League '),('grupa','Group'),('Istok','East'),('Zapad','West'),('Sever','North'),('Jug','South')]:
+        ('Međuopštinska liga','Intermunicipal League'),('Opštinska liga','Municipal League'),('opštinska liga','Municipal League'),
+        ('Gradska liga','City League'),('gradska liga','City League'),('okružna liga','District League'),('Šumadijska liga','Šumadija League'),
+        (' liga',' League'),('"A" liga','"A" League'),('"B" liga','"B" League'),('Zona ','Zone League '),('grupa','Group'),
+        ('Istok','East'),('Zapad','West'),('Sever','North'),('Jug','South'),('Centar','Centre'),(' Beograd',' Belgrade'),
+        ]:
         out=out.replace(src,dst)
+    # ordinal words left at the start ("Druga Municipal League ..." -> "Second Municipal League ...")
+    out=re.sub(r'(\d+)\. razred',r'Class \1',out)
+    out=re.sub(r'^(Prva|Druga|Treća) ',lambda m:{'Prva':'First ','Druga':'Second ','Treća':'Third '}[m.group(1)],out)
     return re.sub(r'\s+',' ',out).strip()
 
 HEADERS = {
