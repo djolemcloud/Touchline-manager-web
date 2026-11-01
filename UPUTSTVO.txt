@@ -1,0 +1,25 @@
+TOUCHLINE WEB PORTAL 1.7.1 · CLEAN FREEZE
+==========================================
+
+POKRETANJE
+1. Po potrebi pokreni INSTALL_DEPENDENCIES.bat.
+2. Pokreni START_TOUCHLINE.bat.
+3. Portal se pokreće na lokalnom portu definisanom u portal/config.py (default 5100).
+
+BITNI FAJLOVI
+- data\cm_data_hub.db                  aktuelna portal baza
+- HISTORY\TOUCHLINE_HISTORY_MASTER.xlsx  autoritativni History Excel
+- static\jerseys\                       dresovi Superlige + Prve lige
+- static\crests\                        grbovi klubova
+- portal\                               aplikacioni kod
+
+BACKUP
+- BACKUPS folder nije uključen u CLEAN paketu; BACKUP_DATA.bat će ga napraviti kada zatreba.
+- Pre budućih izmena koristi BACKUP_DATA.bat ili neka novi update paket napravi sopstveni backup.
+
+HISTORY
+- Ako se kasnije menja History Excel, koristi IMPORT_HISTORY_EXCEL.bat.
+
+NAPOMENA
+- Stadium PHOTO funkcija je namerno ugašena/uklonjena iz aktivnog Superadmin workflow-a.
+- Naziv stadiona i kapacitet ostaju kao podaci i nisu obrisani.

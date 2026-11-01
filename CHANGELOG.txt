@@ -1,0 +1,33 @@
+TOUCHLINE WEB PORTAL 1.7.1 · CLEAN FREEZE
+==========================================
+
+STATUS
+- Ovo je očišćena freeze verzija Touchline Web Portala pre pauze razvoja.
+- Aktuelni vizuelni pravac: dresovi za Superligu i Prvu ligu.
+- Stadium photo eksperiment je napušten i njegovi generisani fajlovi/reporti su uklonjeni.
+- Poznati deferred problem: kod pojedinih klubova istorija još ima prazne sezone (npr. Borac Čačak). To nije rešavano u ovom clean pass-u.
+
+ZADRŽANO
+- aktuelna SQLite baza
+- portal Python kod
+- kompletan HISTORY Excel master
+- trophy mapping + trophy asseti
+- grbovi klubova i reprezentacija
+- branding, sponsor i competition vizuali
+- dresovi Superlige i Prve lige
+- START / SELF_TEST / dependency / history-import skripte
+
+UKLONJENO
+- svi BACKUPS iz prethodnih update-a
+- svi __pycache__ i .pyc fajlovi
+- svi stadium CSV reporti
+- svi lokalni stadium-photo asseti i njihove DB reference
+- data/history_cache (regenerativni cache)
+- stari 06B stadium marker
+- prazan tests folder
+- stari TROPHY_CATALOG preview JPG
+- stari/neupotrebljivi AZURIRAJ.bat iz prethodnog update paketa
+
+SUPERADMIN
+- uklonjena napuštena 06B stadium-photo akcija i automatski stadium-image sync iz generalnog update-a.
+- stadium naziv/kapacitet kao klupski metadata ostaju u bazi.
