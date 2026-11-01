@@ -1,0 +1,129 @@
+{
+  "version": "1.1",
+  "style": "Touchline CGI / animated trophy library; local assets only",
+  "fallbacks": {
+    "league": "/static/history/trophies/league_trophy_animated.webp",
+    "cup": "/static/history/trophies/domestic_cup_animated.webp",
+    "europe": "/static/history/trophies/fallback_animated.webp",
+    "world": "/static/history/trophies/fallback_animated.webp"
+  },
+  "competitions": {
+    "european-cup": {
+      "image": "/static/history/trophies/european_cup_animated.webp",
+      "source": "Touchline CGI render based on the European Cup trophy form",
+      "license": "Original Touchline project render"
+    },
+    "intercontinental-cup": {
+      "image": "/static/history/trophies/intercontinental_cup_animated.webp",
+      "source": "Touchline CGI render based on historical Intercontinental Cup references",
+      "license": "Original Touchline project render"
+    },
+    "uefa-super-cup": {
+      "image": "/static/history/trophies/uefa_super_cup_animated.webp",
+      "source": "Touchline CGI render based on UEFA Super Cup trophy references",
+      "license": "Original Touchline project render"
+    },
+    "uefa-cup": {
+      "image": "/static/history/trophies/uefa_cup_animated.webp",
+      "source": "Touchline CGI render based on UEFA Cup trophy references",
+      "license": "Original Touchline project render"
+    },
+    "mitropa-cup": {
+      "image": "/static/history/trophies/mitropa_cup_animated.webp",
+      "source": "Touchline CGI render based on Mitropa/Central European Cup references",
+      "license": "Original Touchline project render"
+    },
+    "intertoto-cup": {
+      "image": "/static/history/trophies/intertoto_cup_animated.webp",
+      "source": "Touchline CGI render based on UEFA Intertoto Cup trophy references",
+      "license": "Original Touchline project render"
+    },
+    "fairs-cup": {
+      "image": "/static/history/trophies/fairs_cup_animated.webp",
+      "source": "Touchline CGI render based on Inter-Cities Fairs Cup trophy references",
+      "license": "Original Touchline project render"
+    },
+    "yugoslavia-first-1946-1992": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Touchline CGI render from project-owner reference photo of the Yugoslav champion trophy",
+      "license": "Original Touchline project render"
+    },
+    "serbia-republic-1946": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Historical league-family CGI visual; exact 1945/46 trophy close-up not verified",
+      "license": "Original Touchline project render"
+    },
+    "fr-yugoslavia-first-1992-2003": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Federal championship lineage CGI visual; exact era-specific close-up remains replaceable",
+      "license": "Original Touchline project render"
+    },
+    "serbia-montenegro-first-2003-2006": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Federal championship lineage CGI visual; exact era-specific close-up remains replaceable",
+      "license": "Original Touchline project render"
+    },
+    "serbia-top-flight": {
+      "image": "/static/history/trophies/serbia_superliga_animated.webp",
+      "source": "Touchline CGI render researched from recent Serbian champion trophy ceremony references",
+      "license": "Original Touchline project render"
+    },
+    "yugoslavia-cup": {
+      "image": "/static/history/trophies/yugoslavia_cup_animated.webp",
+      "source": "Touchline CGI render from project-owner Marshal Tito Cup reference photo",
+      "license": "Original Touchline project render"
+    },
+    "fr-yugoslavia-cup": {
+      "image": "/static/history/trophies/fry_scg_cup_animated.webp",
+      "source": "Touchline CGI render researched from 1990s/2000s Yugoslav Cup references",
+      "license": "Original Touchline project render"
+    },
+    "serbia-montenegro-cup": {
+      "image": "/static/history/trophies/fry_scg_cup_animated.webp",
+      "source": "Touchline CGI render researched from Serbia and Montenegro Cup references (2003-2006)",
+      "license": "Original Touchline project render"
+    },
+    "serbia-cup": {
+      "image": "/static/history/trophies/serbia_cup_animated.webp",
+      "source": "Touchline CGI render researched from Serbian Cup ceremony references through 2025/26",
+      "license": "Original Touchline project render"
+    }
+  },
+  "families": {
+    "yugoslavia-second-league": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Yugoslav league-family CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "fr-yugoslavia-second": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "FR Yugoslavia league-family CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "serbia-montenegro-second": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Serbia and Montenegro league-family CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "serbia-third-": {
+      "image": "/static/history/trophies/serbia_superliga_animated.webp",
+      "source": "Serbian league-family CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "source-fry-": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "FR Yugoslavia lineage CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "source-scg-": {
+      "image": "/static/history/trophies/yugoslavia_league_animated.webp",
+      "source": "Serbia and Montenegro lineage CGI visual",
+      "license": "Original Touchline project render"
+    },
+    "source-modern-": {
+      "image": "/static/history/trophies/serbia_superliga_animated.webp",
+      "source": "Modern Serbian league-family CGI visual",
+      "license": "Original Touchline project render"
+    }
+  }
+}

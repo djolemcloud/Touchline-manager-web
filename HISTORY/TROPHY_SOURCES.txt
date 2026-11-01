@@ -1,0 +1,71 @@
+TOUCHLINE · TROPHY VISUAL RESEARCH / SOURCES · 1.6.2
+====================================================
+
+PRINCIP
+- Portal od 1.6.2 NE koristi fotografije pehara u javnom UI-ju.
+- Sve prikazane slike su originalni Touchline CGI/animirani renderi u jedinstvenom stilu.
+- Fotografije i javni izvori služe samo kao vizuelna/istorijska referenca za oblik.
+- HISTORY/TROPHY_MAP.json je replaceable mapping: ako kasnije pronađemo bolju potvrđenu referencu, menja se asset bez menjanja History baze.
+
+DOMAĆI TROFEJI
+1) Kup Jugoslavije / Pehar Maršala Tita
+- Primarna referenca: fotografija koju je vlasnik Touchline projekta dostavio u razvoju 31.10.2026.
+- Render: static/history/trophies/yugoslavia_cup_animated.webp
+
+2) Prvak Jugoslavije / istorijski prvenstveni pehar
+- Primarna referenca: fotografija koju je vlasnik Touchline projekta dostavio u razvoju 31.10.2026.
+- Render: static/history/trophies/yugoslavia_league_animated.webp
+
+3) Kup SR Jugoslavije
+- Zvanična klupska istorijska potvrda / referenca:
+  https://www.crvenazvezdafk.com/sr-latn/vesti/zvezdani-momenti-crvena-zvezda-je-pobednik-kupa-sr-jugoslavije
+- Dodatna istorijska foto-referenca: proslava Kupa 2002 (Nemanja Vidić / Crvena zvezda).
+- Render porodica: static/history/trophies/fry_scg_cup_animated.webp
+
+4) Kup Srbije i Crne Gore
+- Zvanična klupska istorijska potvrda / referenca:
+  https://www.crvenazvezdafk.com/sr-latn/vesti/price-o-zvezdinim-trofejima-poslednji-kup-srbije-i-crne-gore
+- Dodatna foto-referenca: Sartid, Kup SCG 2003.
+- Render porodica: static/history/trophies/fry_scg_cup_animated.webp
+
+5) Kup Srbije · istorijska era 2006/07–2025/26
+- FSS potvrđuje da novi pehar treba da važi od 2026/27, pa se prethodna era vodi odvojeno:
+  https://fss.rs/javni-konkurs-za-izradu-idejnog-resenja-novog-pehara-koji-se-dodeljuje-pobedniku-kupa-srbije/?script=lat
+- Ceremonija / foto-referenca 2025/26:
+  https://fss.rs/82392-2/?script=lat
+- Render: static/history/trophies/serbia_cup_animated.webp
+
+6) Prvak Srbije / SuperLiga Srbije
+- FSS potvrda ceremonije i pehara 2025/26:
+  https://fss.rs/crvena-zvezda-sampion-srbije-za-sezonu-2025-26/?script=lat
+- Render: static/history/trophies/serbia_superliga_animated.webp
+
+NOVI KUP SRBIJE 2026/27
+- FSS je najavio novi pehar za sezonu 2026/27 i promociju u septembru 2026.
+- Do ove verzije nije pronađena dovoljno pouzdana javna close-up referenca iz koje bi se odgovorno napravio tačan render.
+- Zato 1.6.2 NE izmišlja novi dizajn. Mapping je spreman da ga dodamo kada referenca bude potvrđena.
+
+MEĐUNARODNI TROFEJI
+- European Cup / Champions League: istorijski oblik pehara + project reference.
+- Intercontinental Cup: javne istorijske reference (Wikimedia / klupski muzeji).
+- UEFA Cup: javne muzejske reference.
+- UEFA Super Cup: javne muzejske/reference fotografije.
+- Mitropa Cup: javne istorijske reference.
+- UEFA Intertoto Cup: Wikimedia/UEFA istorijske reference.
+- Inter-Cities Fairs Cup: muzejske reference (Barcelona/Dinamo).
+
+LOCAL ASSETS
+- european_cup_animated.webp
+- intercontinental_cup_animated.webp
+- uefa_cup_animated.webp
+- uefa_super_cup_animated.webp
+- mitropa_cup_animated.webp
+- intertoto_cup_animated.webp
+- fairs_cup_animated.webp
+- yugoslavia_league_animated.webp
+- yugoslavia_cup_animated.webp
+- fry_scg_cup_animated.webp
+- serbia_cup_animated.webp
+- serbia_superliga_animated.webp
+
+All rendered assets: Original Touchline project CGI artwork, generated for this build.
