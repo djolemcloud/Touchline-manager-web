@@ -164,5 +164,8 @@ LEVEL6_REGION_ORDER = ('FSB','FSV','WEST','EAST','KIM')
 # source table (e.g. SrbijaSport "Play Off", "Baraž", ▲ / ▼).
 # ---------------------------------------------------------------------------
 STANDINGS_ZONES = {
-    # 1: [(1, 1, 'ucl', 'Liga šampiona – kvalifikacije'), (13, 14, 'relegation', 'Ispadanje')],
+    # SuperLiga Srbije: after the first phase the table splits into two groups
+    1: [(1, 6, 'playoff', 'Plej-of · borba za titulu'), (7, 14, 'playout', 'Plej-aut · borba za opstanak')],
+    # Prva liga Srbije: same split, top 6 to the championship group
+    2: [(1, 6, 'playoff', 'Plej-of · borba za titulu'), (7, 16, 'playout', 'Plej-aut · borba za opstanak')],
 }

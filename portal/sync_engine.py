@@ -623,7 +623,7 @@ _EXTRA_HISTORY_UI={'Nazad':'Back','Državna prvenstva':'National championships',
 SR_EN.update(_EXTRA_HISTORY_UI)
 EN_SR.update({v:k for k,v in _EXTRA_HISTORY_UI.items()})
 # 2.0 UI refresh labels (sr -> en only, so English source data is never rewritten in SR mode)
-SR_EN.update({'Golmani':'Goalkeepers','Odbrana':'Defence','Vezni red':'Midfield','Napad':'Attack','Ostali':'Other','Rođen':'Born','Meni':'Menu','Stadion':'Stadium','Kapacitet':'Capacity','Pretraga':'Search','Pretraži':'Search','Pretraži klub ili igrača':'Search club or player','Klub ili igrač…':'Club or player…','Nema rezultata.':'No results.','Svi rezultati':'All results'})
+SR_EN.update({'Golmani':'Goalkeepers','Odbrana':'Defence','Vezni red':'Midfield','Napad':'Attack','Ostali':'Other','Rođen':'Born','Meni':'Menu','Stadion':'Stadium','Kapacitet':'Capacity','Pretraga':'Search','Pretraži':'Search','Pretraži klub ili igrača':'Search club or player','Klub ili igrač…':'Club or player…','Nema rezultata.':'No results.','Svi rezultati':'All results','Plej-of · borba za titulu':'Play-off · championship group','Plej-aut · borba za opstanak':'Play-out · relegation group'})
 
 
 def _translate_dynamic(text, lang):

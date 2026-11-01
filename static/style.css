@@ -367,7 +367,7 @@ td b{color:var(--text)}
 .standings td:first-child small{display:block;font-size:10px;color:var(--muted);font-weight:500}
 .standings td:last-child b{display:inline-block;min-width:34px;padding:3px 8px;border-radius:7px;background:var(--accent-soft);color:#c4fbe2}
 /* standings zones: coloured stripe on the rank cell + legend */
-.standings{--z-champion:#f2c94c;--z-ucl:#4f8cff;--z-uel:#ff9f43;--z-uecl:#3ddc97;--z-promotion:#3ddc97;--z-playoff:#6aa8ff;--z-barrage:#f2b84b;--z-playout:#c58ae0;--z-relegation:#f06b7e}
+.standings{--z-champion:#f2c94c;--z-ucl:#4f8cff;--z-uel:#ff9f43;--z-uecl:#3ddc97;--z-promotion:#3ddc97;--z-playoff:#6aa8ff;--z-barrage:#f2b84b;--z-playout:#e8606f;--z-relegation:#f06b7e}
 .standings tr.zone td:first-child{box-shadow:inset 3px 0 0 var(--zc)}
 .standings tr.zone td:first-child{color:var(--text)}
 .zone-champion{--zc:var(--z-champion)}.zone-ucl{--zc:var(--z-ucl)}.zone-uel{--zc:var(--z-uel)}.zone-uecl{--zc:var(--z-uecl)}.zone-promotion{--zc:var(--z-promotion)}
