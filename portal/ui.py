@@ -6,7 +6,9 @@ from . import sync_engine as engine
 
 
 def esc(v):
-    return escape(str(v or ''))
+    # 0 is a real value (e.g. "0 titula") and must be shown, only None/False/'' are empty
+    if v is None or v is False: return ''
+    return escape(str(v))
 
 
 def tr(v):
@@ -30,14 +32,16 @@ def layout(title: str, body: str, *, admin: bool=False) -> str:
     return f'''<!doctype html>
 <html lang="{lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#071019">
-<title>{esc(title)}</title><link rel="stylesheet" href="/static/style.css?v=130">
+<meta name="theme-color" content="#080d14">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<title>{esc(title)}</title><link rel="stylesheet" href="/static/style.css?v=200">
 </head><body>
-<header class="app-header"><div class="wrap head"><a class="brand" href="/"><span class="brandmark">TL</span><span class="brandtext"><b>Touchline</b><small>{esc(tagline)}</small></span></a><nav class="topnav"><a href="/">{esc(home_label)}</a><a href="/#competitions">{esc(comp_label)}</a><a href="/fss?country_id=1">FSS</a></nav><div class="head-actions">{admin_link}<nav class="langswitch" aria-label="Language"><a class="{sr}" href="/set_lang?lang=sr">SR</a><span>/</span><a class="{en}" href="/set_lang?lang=en">EN</a></nav></div></div></header>
+<header class="app-header" id="appHeader"><div class="wrap head"><a class="brand" href="/"><span class="brandmark">TL</span><span class="brandtext"><b>Touchline</b><small>{esc(tagline)}</small></span></a><nav class="topnav"><a href="/">{esc(home_label)}</a><a href="/#competitions">{esc(comp_label)}</a><a href="/fss?country_id=1">FSS</a><a class="navadmin" href="/admin/sync?country_id=1">SUPERADMIN</a></nav><div class="head-actions">{admin_link}<nav class="langswitch" aria-label="Language"><a class="{sr}" href="/set_lang?lang=sr">SR</a><span>/</span><a class="{en}" href="/set_lang?lang=en">EN</a></nav><button class="navtoggle" id="navToggle" type="button" aria-label="Meni" aria-expanded="false"><span></span></button></div></div></header>
 <main class="wrap app-main"><button id="globalBack" class="global-back" type="button" aria-label="{esc(back_label)}">← {esc(back_label)}</button>{body}</main>
 <footer class="wrap app-footer"><span>Touchline Web Portal {esc(VERSION)}</span><span>{esc(country_label)}</span></footer>
 <div id="adminBusy" class="adminbusy"><div class="adminbusybox"><div class="adminspinner"></div><h2>SUPERADMIN</h2><p id="adminBusyAction">{esc(busy)}</p><small>{esc(dont_close)}</small></div></div>
-<script>document.addEventListener('submit',function(ev){{var f=ev.target;if(f&&f.dataset&&f.dataset.busy==='1'){{var o=document.getElementById('adminBusy');if(o)o.classList.add('show');var b=f.querySelector('button');if(b){{document.getElementById('adminBusyAction').textContent=b.textContent;b.disabled=true;}}}}}});(function(){{var b=document.getElementById('globalBack');if(!b)return;if(location.pathname==='/'||location.pathname==='/index'){{b.style.display='none';return;}}b.addEventListener('click',function(){{if(history.length>1)history.back();else location.href='/';}});}})();</script>
+<script>document.addEventListener('submit',function(ev){{var f=ev.target;if(f&&f.dataset&&f.dataset.busy==='1'){{var o=document.getElementById('adminBusy');if(o)o.classList.add('show');var b=f.querySelector('button');if(b){{document.getElementById('adminBusyAction').textContent=b.textContent;b.disabled=true;}}}}}});(function(){{var b=document.getElementById('globalBack');if(!b)return;if(location.pathname==='/'||location.pathname==='/index'){{b.style.display='none';return;}}b.addEventListener('click',function(){{if(history.length>1)history.back();else location.href='/';}});var c=document.querySelector('.crumb');if(c)c.insertBefore(b,c.firstChild);}})();(function(){{var t=document.getElementById('navToggle'),h=document.getElementById('appHeader');if(!t||!h)return;t.addEventListener('click',function(){{var o=h.classList.toggle('nav-open');t.setAttribute('aria-expanded',o?'true':'false');}});}})();</script>
 </body></html>'''
 
 

@@ -83,8 +83,7 @@ def home(msg=''):
     <div class="sponsorlogo"><img src="/static/sponsors/msmobile_logo.png" alt="MS Mobile"></div>
     <div class="sponsorlogo"><img src="/static/sponsors/superior_logo.png" alt="Superior"></div>
     <div class="sponsorlogo"><img src="/static/sponsors/moxom_logo_v2.png" alt="Moxom"></div></div></section>'''
-    admin=f'<div class="superadminhome"><a class="button superadminbtn" href="/admin/sync?country_id={cid}">SUPERADMIN · CENTAR SINHRONIZACIJE</a></div>'
-    return layout('Touchline Web Portal',notice(msg)+sponsors+admin+'<h1>Srbija</h1><div id="competitions" class="visualgrid homegrid">'+''.join(cards)+'</div>')
+    return layout('Touchline Web Portal',notice(msg)+'<h1>Srbija</h1><div id="competitions" class="visualgrid homegrid">'+''.join(cards)+'</div>'+sponsors)
 
 
 def fss_hub(cid=1,msg=''):
@@ -316,6 +315,60 @@ def _jersey_panel(club_id, club_name='Klub'):
     return f'''<div class="clubhero-stadium jersey-panel"><div class="jersey-gallery">{items}</div><div class="stadium-caption jersey-caption"><strong>Dresovi 2026/27</strong><span>{len(kits)} dostupne garniture</span></div></div>'''
 
 
+# Position groups for squad tables (source data uses Transfermarkt English labels).
+_POS_GROUPS=(
+    ('gk','Golmani','GK',('goalkeeper',)),
+    ('df','Odbrana','DF',('back','defender','sweeper')),
+    ('mf','Vezni red','MF',('midfield',)),
+    ('fw','Napad','FW',('forward','striker','winger')),
+)
+
+
+def _pos_group(position):
+    p=str(position or '').lower()
+    for key,label,short,keys in _POS_GROUPS:
+        if any(k in p for k in keys): return key
+    return 'other'
+
+
+def _age_from_dob(dob):
+    """'21/05/2004' -> 22 (age today); returns '' when the date is unknown."""
+    import datetime as _dt
+    try:
+        d,m,y=[int(x) for x in str(dob or '').strip()[:10].split('/')]
+        t=_dt.date.today(); return t.year-y-((t.month,t.day)<(m,d))
+    except Exception:
+        return ''
+
+
+def _squad_table(players, columns):
+    """Players grouped GK -> DF -> MF -> FW with a heading row per group.
+    columns: list of (header, cell_fn(row)->html, css_class)."""
+    groups={k:[] for k,*_ in _POS_GROUPS}; groups['other']=[]
+    for p in players: groups[_pos_group(p['position'])].append(p)
+    head=''.join(f'<th class="{cls}">{esc(h)}</th>' for h,_,cls in columns)
+    body=[]
+    meta={k:(label,short) for k,label,short,_ in _POS_GROUPS}; meta['other']=('Ostali','—')
+    for key in [k for k,*_ in _POS_GROUPS]+['other']:
+        rows=groups[key]
+        if not rows: continue
+        label,_short=meta[key]
+        body.append(f'<tr class="grouprow g-{key}"><th colspan="{len(columns)}">{esc(label)}<span>{len(rows)}</span></th></tr>')
+        for r in rows:
+            body.append('<tr>'+''.join(f'<td class="{cls}">{fn(r)}</td>' for _,fn,cls in columns)+'</tr>')
+    return f'<div class="tablewrap"><table class="squadtable"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+
+
+def _pos_cell(r):
+    key=_pos_group(r['position']); short=dict((k,s_) for k,_,s_,_ in _POS_GROUPS).get(key,'—')
+    return f'<span class="pos pos-{key}">{short}</span>{esc(r["position"])}' if r['position'] else '—'
+
+
+def _dob_cell(r):
+    age=_age_from_dob(r['date_of_birth'])
+    return esc(r['date_of_birth'])+(f'<span class="age">({age})</span>' if age!='' else '')
+
+
 def _club_tabs(cid,active='overview'):
     items=[('overview','Pregled',f'/club?id={cid}'),('players','Igrači',f'/club?id={cid}#players'),('staff','Stručni štab',f'/club?id={cid}#staff'),('transfers','Transferi',f'/transfers?id={cid}'),('history','Istorija',f'/club/history?id={cid}')]
     return '<nav class="sectiontabs">'+''.join(f'<a class="{("active" if key==active else "")}" href="{href}">{esc(label)}</a>' for key,label,href in items)+'</nav>'
@@ -340,19 +393,18 @@ def league(lid,msg=''):
         name=_display_club_name(c)
         if premium:
             jersey_media=_jersey_card_visual(c['id'], name)
+            stadium_media=''
             if jersey_media:
                 stadium_media=jersey_media
-                stadium_meta=f'<strong>Dresovi 2026/27</strong><span>Dostupan prikaz garnitura</span>'
             else:
                 stadium_src=_stadium_asset(c['id'],c['stadium_image'])
                 if stadium_src:
                     stadium_media=f'<img src="{esc(stadium_src)}" alt="{esc(_display_stadium_name(c["stadium_name"] or "Stadion"))}">'
-                else:
-                    stadium_media='<div class="mini-stadium-placeholder">STADION</div>'
-                cap=((f'{int(c["stadium_capacity"]):,}' if engine.ui_lang()=='en' else f'{int(c["stadium_capacity"]):,}'.replace(',','.')) if c['stadium_capacity'] else '—')
-                stadium_meta=f'<strong>{esc(_display_stadium_name(c["stadium_name"] or "Stadion"))}</strong><span>Kapacitet: {esc(cap)}</span>'
+            cap=((f'{int(c["stadium_capacity"]):,}' if engine.ui_lang()=='en' else f'{int(c["stadium_capacity"]):,}'.replace(',','.')) if c['stadium_capacity'] else '—')
+            stadium_meta=f'<strong>{esc(_display_stadium_name(c["stadium_name"] or "Stadion"))}</strong><span>Kapacitet: {esc(cap)}</span>'
+            side=f'<div class="clubcardstadium">{stadium_media}</div>' if stadium_media else ''
             club_cards.append(f'''<a class="clubcard clubcard-premium" href="/club?id={c["id"]}">
-                <div class="clubcard-media"><div class="clubcardcrest">{crest}</div><div class="clubcardstadium">{stadium_media}</div></div>
+                <div class="clubcard-media{'' if side else ' solo'}"><div class="clubcardcrest">{crest}</div>{side}</div>
                 <div class="clubcard-copy"><h3>{esc(name)}</h3><div class="clubcard-stadium-meta">{stadium_meta}</div><p>{int(c["pc"] or 0)} igrača · {int(c["sc"] or 0)} staff</p></div></a>''')
         else:
             club_cards.append(f'<a class="clubcard" href="/club?id={c["id"]}"><div class="clubcardcrest">{crest}</div><h3>{esc(name)}</h3><p>{int(c["pc"] or 0)} igrača · {int(c["sc"] or 0)} staff</p><small>{esc(c["tm_match_status"] or "")}</small></a>')
@@ -379,14 +431,27 @@ def club(cid,msg=''):
     meta=[]
     if info and info['founded']: meta.append(f'<span><b>Osnovan</b>{esc(info["founded"])}</span>')
     if city: meta.append(f'<span><b>Grad</b>{esc(city)}</span>')
-    if info and info['website']: meta.append(f'<span><b>Zvanični sajt</b>{esc(info["website"])}</span>')
+    if info and info['website']:
+        site=str(info['website']); href=site if site.startswith('http') else 'https://'+site
+        meta.append(f'<span><b>Zvanični sajt</b><a href="{esc(href)}" target="_blank" rel="noopener">{esc(site.replace("https://","").replace("http://","").rstrip("/"))}</a></span>')
     club_data=''.join(meta) or '<p>Podaci o klubu još nisu učitani.</p>'
     stadium_name=_display_stadium_name(stadium['name'] if stadium and stadium['name'] else 'Stadion')
     stadium_capacity=((f'{int(stadium["capacity"]):,}' if engine.ui_lang()=='en' else f'{int(stadium["capacity"]):,}'.replace(',','.')) if stadium and stadium['capacity'] else '—')
     stadium_panel=_jersey_panel(cid,club_name)
-    if not stadium_panel:
+    if not stadium_panel and _stadium_asset(cid,(stadium['image_local'] if stadium and 'image_local' in stadium.keys() else '')):
         stadium_panel=f'''<div class="clubhero-stadium">{_stadium_visual(stadium,cid)}<div class="stadium-caption"><strong>{esc(stadium_name)}</strong><span>Kapacitet: {esc(stadium_capacity)}</span></div></div>'''
-    p_rows=''.join(f'<tr><td>{esc(p["squad_number"])}</td><td>{esc(p["name"])}</td><td>{esc(p["position"])}</td><td>{esc(p["date_of_birth"])}</td><td>{esc(p["nationality"])}</td><td>{esc(p["market_value"])}</td></tr>' for p in players)
+    if not stadium_panel and stadium and stadium['name']:
+        # no kit and no photo: show the stadium as a plain fact instead of an empty placeholder
+        meta.append(f'<span><b>Stadion</b>{esc(stadium_name)} · {esc(stadium_capacity)}</span>')
+        club_data=''.join(meta)
+    players_table=_squad_table(players,[
+        ('#',lambda r: esc(r['squad_number']) or '—',''),
+        ('Ime',lambda r: esc(r['name']),'name'),
+        ('Pozicija',_pos_cell,''),
+        ('Rođen',_dob_cell,'hide-sm'),
+        ('Nacionalnost',lambda r: esc(r['nationality']),'hide-sm'),
+        ('Vrednost',lambda r: esc(r['market_value']) or '—','num'),
+    ])
     s_rows=''.join(f'<tr><td>{esc(x["section"])}</td><td>{esc(x["name"])}</td><td>{esc(x["position"])}</td><td>{esc(x["date_of_birth"])}</td><td>{esc(x["nationality"])}</td></tr>' for x in staff)
     exports=f'<div class="pageactions compact-actions"><a class="button" href="/export_club_players?id={cid}">Igrači XLSX</a><a class="button secondary" href="/export_club_staff?id={cid}">Stručni štab XLSX</a></div>'
     if transfer_summary:
@@ -404,8 +469,8 @@ def club(cid,msg=''):
         <a class="club-module history-module" href="/club/history?id={cid}"><div class="history-mark"><span>{esc(history_start)}</span><i></i><span>DANAS</span></div><div class="module-copy"><small>ISTORIJA KLUBA</small><h2>Istorija</h2>{history_meta}</div></a>
     </div>'''
     league_name=_display_league_name(c['league_name'])
-    hero=f'''<section class="clubhero clubhero-v2"><div class="clubhero-crest">{crest}</div><div class="clubhero-copy"><small>{esc(league_name)}</small><h1>{esc(club_name)}</h1><div class="clubfacts">{club_data}</div></div>{stadium_panel}</section>'''
-    body=notice(msg)+crumb([(league_name,f'/league?id={c["league_id"]}'),(club_name,None)])+hero+_club_tabs(cid)+exports+modules+f'<h2 id="players"><span>Igrači</span> <small>({len(players)})</small></h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Ime</th><th>Pozicija</th><th>DOB</th><th>Nacionalnost</th><th>Vrednost</th></tr></thead><tbody>{p_rows}</tbody></table></div><h2 id="staff"><span>Stručni štab</span> <small>({len(staff)})</small></h2><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Ime</th><th>Uloga</th><th>DOB</th><th>Nacionalnost</th></tr></thead><tbody>{s_rows}</tbody></table></div>'
+    hero=f'''<section class="clubhero clubhero-v2{'' if stadium_panel else ' no-side'}"><div class="clubhero-crest">{crest}</div><div class="clubhero-copy"><small>{esc(league_name)}</small><h1>{esc(club_name)}</h1><div class="clubfacts">{club_data}</div></div>{stadium_panel}</section>'''
+    body=notice(msg)+crumb([(league_name,f'/league?id={c["league_id"]}'),(club_name,None)])+hero+_club_tabs(cid)+exports+modules+f'<h2 id="players"><span>Igrači</span> <small>({len(players)})</small></h2>{players_table}<h2 id="staff"><span>Stručni štab</span> <small>({len(staff)})</small></h2><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Ime</th><th>Uloga</th><th>DOB</th><th>Nacionalnost</th></tr></thead><tbody>{s_rows}</tbody></table></div>'
     return layout(club_name,body)
 
 
@@ -503,7 +568,12 @@ def national_team(team_id,msg=''):
     if not t: con.close(); return layout('Not found','<h1>Reprezentacija nije pronađena</h1>')
     players=con.execute('SELECT * FROM national_team_players WHERE national_team_id=? ORDER BY position,name',(int(team_id),)).fetchall(); staff=con.execute('SELECT * FROM national_team_staff WHERE national_team_id=? ORDER BY section,position,name',(int(team_id),)).fetchall(); con.close()
     img='/'+t['image_path'] if t['image_path'] else '/static/branding/fss.jpg'
-    p=''.join(f'<tr><td>{esc(x["name"])}</td><td>{esc(x["position"])}</td><td>{esc(x["date_of_birth"])}</td><td>{esc(x["current_club"])}</td></tr>' for x in players)
+    players_table=_squad_table(players,[
+        ('Ime',lambda r: esc(r['name']),'name'),
+        ('Pozicija',_pos_cell,''),
+        ('Rođen',_dob_cell,'hide-sm'),
+        ('Klub',lambda r: esc(r['current_club']) or '—',''),
+    ])
     s=''.join(f'<tr><td>{esc(x["section"])}</td><td>{esc(x["name"])}</td><td>{esc(x["position"])}</td><td>{esc(x["date_of_birth"])}</td></tr>' for x in staff)
     exports=f'<div class="pageactions"><a class="button" href="/export_national_players?id={team_id}">Igrači XLSX</a><a class="button secondary" href="/export_national_staff?id={team_id}">Stručni štab XLSX</a></div>'
     # Self-heal configured national-team standings. If the table is missing or
@@ -520,7 +590,7 @@ def national_team(team_id,msg=''):
     comp_label=''
     if t['standings_competition_name']:
         comp_label=f'<p><b>{esc(t["standings_competition_name"])}</b>{(" · Grupa "+esc(t["standings_group_code"])) if t["standings_group_code"] else ""}</p>'
-    body=notice(msg)+f'<section class="teamhero"><img src="{esc(img)}"><div><small>NACIONALNA SELEKCIJA</small><h1>{esc(t["name"])}</h1><p>{len(players)} igrača · {len(staff)} članova stručnog štaba</p>{comp_label}</div></section>{exports}{standings}<h2>Igrači</h2><div class="tablewrap"><table><thead><tr><th>Ime</th><th>Pozicija</th><th>DOB</th><th>Klub</th></tr></thead><tbody>{p}</tbody></table></div><h2>Stručni štab</h2><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Ime</th><th>Uloga</th><th>DOB</th></tr></thead><tbody>{s}</tbody></table></div>'
+    body=notice(msg)+f'<section class="teamhero"><img src="{esc(img)}"><div><small>NACIONALNA SELEKCIJA</small><h1>{esc(t["name"])}</h1><p>{len(players)} igrača · {len(staff)} članova stručnog štaba</p>{comp_label}</div></section>{exports}{standings}<h2>Igrači <small>({len(players)})</small></h2>{players_table}<h2>Stručni štab</h2><div class="tablewrap"><table><thead><tr><th>Sekcija</th><th>Ime</th><th>Uloga</th><th>DOB</th></tr></thead><tbody>{s}</tbody></table></div>'
     return layout(t['name'],body)
 
 

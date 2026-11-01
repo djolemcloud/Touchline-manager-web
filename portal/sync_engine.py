@@ -622,6 +622,8 @@ SR_EN.update({'Belgrad':'Belgrade','Goal keeper coach':'Goalkeeping Coach','Cond
 _EXTRA_HISTORY_UI={'Nazad':'Back','Državna prvenstva':'National championships','DRŽAVNA PRVENSTVA':'NATIONAL CHAMPIONSHIPS','Nacionalni kupovi':'National cups','NACIONALNI KUPOVI':'NATIONAL CUPS','UKUPNO':'TOTAL','Prvak':'Champion','Osvajač':'Winner'}
 SR_EN.update(_EXTRA_HISTORY_UI)
 EN_SR.update({v:k for k,v in _EXTRA_HISTORY_UI.items()})
+# 2.0 UI refresh labels (sr -> en only, so English source data is never rewritten in SR mode)
+SR_EN.update({'Golmani':'Goalkeepers','Odbrana':'Defence','Vezni red':'Midfield','Napad':'Attack','Ostali':'Other','Rođen':'Born','Meni':'Menu','Stadion':'Stadium','Kapacitet':'Capacity'})
 
 
 def _translate_dynamic(text, lang):
